@@ -27,7 +27,7 @@ fn main() {
     let mut fq_seq = String::from("");
     let mut fq_start = 0;
     let mut fq_stop = 0;
-    let mut strand = String::from("");        
+    let mut strand = String::from("");
 
     let mut found_hit = false;
 
