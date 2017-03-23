@@ -34,8 +34,6 @@ fn main() {
 
     let mut out_file =
         BufWriter::new(File::create("/tmp/out").expect("problem opening output file"));
-    let mut statistics_file =
-        BufWriter::new(File::create("/tmp/stats").expect("problem opening statistics file"));
 
     for (line_number, line) in file.lines().enumerate() {
         let l = line.expect("programmer error: no line to unwrap");
@@ -76,11 +74,6 @@ fn main() {
             out_file.write(b"\n").unwrap();
         }
     }
-
-    // print statistics
-    writeln!(statistics_file, "Total\tExtracted\n").unwrap();
-    //statistics_file.write("{}\t{}",count_total.to_string(), count_extracted.to_string());
-    //statistics_file.write(b"\n").unwrap();
 
     println!("Fastq data extracted successfully");
     println!("Total Reads in this file:\t {}", count_total);
