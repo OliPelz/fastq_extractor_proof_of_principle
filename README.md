@@ -1,5 +1,5 @@
 # fastq_extractor_proof_of_principle
-this repo tries to optimize some Perl scripts which are part of the CRISPRAnalyzer R shiny package and which are too slow for production use in web applications. The original code's benchmark is as follow (please note: script not included here)
+this repo tries to optimize some Perl scripts which are part of the CRISPRAnalyzer R shiny package and which are too slow for production use in web applications. The original code's benchmark is as follow (please note: PERL script not included here)
 
 PERL
 ```
