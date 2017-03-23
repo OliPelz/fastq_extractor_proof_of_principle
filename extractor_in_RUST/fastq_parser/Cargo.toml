@@ -1,0 +1,8 @@
+[package]
+name = "fastq_parser"
+version = "0.1.0"
+authors = ["olip"]
+
+[dependencies]
+regex = "0.2"
+
