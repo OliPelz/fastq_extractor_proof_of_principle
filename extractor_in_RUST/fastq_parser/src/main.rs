@@ -20,7 +20,7 @@ fn main() {
     let f = File::open(fastq_file).expect("Problem opening fastq file");
 
     let file = BufReader::new(&f);
-    let mut cnt = 1;
+    let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
 
     //let mut fq_header: &str = "";
     let mut fq_header = String::from("");
@@ -37,6 +37,7 @@ fn main() {
     let mut out_file        = BufWriter::new(File::create("/tmp/out").expect("problem opening output file"));
     let mut statistics_file = BufWriter::new(File::create("/tmp/stats").expect("problem opening statistics file"));
 
+    let mut cnt = 1;
     for line in file.lines() {
         let l = line.expect("programmer error: no line to unwrap");
         let n = cnt % 4;
