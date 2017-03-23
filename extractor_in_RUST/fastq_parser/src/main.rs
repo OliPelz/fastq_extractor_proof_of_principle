@@ -17,9 +17,6 @@ fn main() {
        process::exit(1);
     }
     let fastq_file = &args[1];
-    let f = File::open(fastq_file).expect("Problem opening fastq file");
-
-    let file = BufReader::new(&f);
     let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
 
     //let mut fq_header: &str = "";
