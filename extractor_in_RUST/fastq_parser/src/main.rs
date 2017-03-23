@@ -20,7 +20,6 @@ fn main() {
     let f = File::open(fastq_file).expect("Problem opening fastq file");
 
     let file = BufReader::new(&f);
-    let mut writer = BufWriter::new(io::stdout());
     let mut cnt = 1;
 
     //let mut fq_header: &str = "";
