@@ -12,7 +12,7 @@ use std::process;
 
 fn main() {
 
-    let re = Regex::new("ACC.{20,21}G").unwrap();
+    let re = Regex::new("ACC.{20,21}G").expect("programmer error in accession regex");
 
     let args: Vec<String> = env::args().collect();
 
@@ -21,7 +21,7 @@ fn main() {
        process::exit(1);
     }
     let fastq_file = &args[1];
-    let f = File::open(fastq_file).unwrap();
+    let f = File::open(fastq_file).expect("Problem opening fastq file");
 
     let file = BufReader::new(&f);
     let mut writer = BufWriter::new(io::stdout());
@@ -39,11 +39,11 @@ fn main() {
     let mut count_total = 0;
     let mut count_extracted = 0;
 
-    let mut out_file = File::create("/tmp/out").unwrap();
-    let mut statistics_file = File::create("/tmp/stats").unwrap();
+    let mut out_file = File::create("/tmp/out").expect("problem opening output file");
+    let mut statistics_file = File::create("/tmp/stats").expect("problem opening statistics file");
 
     for line in file.lines() {
-        let l = line.unwrap();
+        let l = line.expect("programmer error: no line to unwrap");
         let n = cnt % 4;
         cnt = cnt + 1;
 
