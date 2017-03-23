@@ -1,6 +1,6 @@
 all: extractor 
 
-extractor: extractor.c kseq.h
+extractor: extractor.c
 	$(CC) -O2 extractor.c -o extractor -lz
 	
 clean:
