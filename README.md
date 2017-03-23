@@ -1,7 +1,19 @@
 # fastq_extractor_proof_of_principle
+this repo tries to optimize some Perl scripts which are part of the CRISPRAnalyzer R shiny package and which are too slow for production use in web applications. The original code's benchmark is as follow (please note: script not included here)
 
+PERL
+```
+time perl CRISPR-extract.pl "ACC(.{20,21})G" data/TRAIL-Replicate1.fastq no
+```
 
-first benchmark without much optimization
+```bash
+real	0m45.006s
+user	0m44.191s
+sys	0m0.682s
+``` 
+
+```
+first benchmark without much optimization.
 
 RUST
 ```bash
@@ -26,3 +38,5 @@ real	0m4.409s
 user	0m3.953s
 sys	0m0.445s
 ```
+
+TODO:  make the regexp parsing multithreaded in RUST and C
