@@ -46,12 +46,12 @@ fn main() {
         let l = line.unwrap();
         let n = cnt % 4;
         cnt = cnt + 1;
+
         if  n == 1 {
             fq_header = l.clone();
             found_hit = false;
             count_total += 1;
-        }
-        if n == 2 {
+        } else if n == 2 {
             match re.find(&l) {
                 None => continue,
                 Some(mat) => {
@@ -63,11 +63,9 @@ fn main() {
                     count_extracted += 1;
                 },
             };
-        }
-        if n == 3 && found_hit {
+        } else if n == 3 && found_hit {
             strand = l.clone()
-        }
-        if n ==0 && found_hit {
+        } else if n ==0 && found_hit {
             out_file.write((&fq_header).as_bytes()).unwrap();
             out_file.write(b"\n").unwrap();
             out_file.write((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
