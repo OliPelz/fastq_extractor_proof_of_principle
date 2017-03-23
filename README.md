@@ -11,7 +11,6 @@ real	0m45.006s
 user	0m44.191s
 sys	0m0.682s
 ``` 
-first benchmark without much optimization.
 
 RUST
 ```bash
@@ -20,9 +19,9 @@ $ time ./extractor_in_RUST/fastq_parser/target/release/fastq_parser /home/olip/D
 
 output
 ```bash
-real	0m14.334s
-user	0m4.267s
-sys	0m10.036s
+real	0m3.866s
+user	0m3.414s
+sys	0m0.438s
 ```
 
 C
@@ -37,4 +36,6 @@ user	0m3.953s
 sys	0m0.445s
 ```
 
-TODO:  make the regexp parsing multithreaded in RUST and C
+TODO:  make the regexp parsing multithreaded in RUST on big big input files
+
+unbelievable the Rust code did beat the low-level C code, pretty amazing!

@@ -70,8 +70,9 @@
 // cut out sequence taking into account regexp positions -CC -G
 // TODO: this need to be set dynamically depending on the regexp  
                       seq_start = pmatch[0].rm_so + 3;
-                      seq_stop = pmatch[0].rm_eo; 	        
-                      memcpy(&seq, buffer + seq_start,  seq_stop - seq_start - 3);
+                      seq_stop = pmatch[0].rm_eo - 1; 	        
+                      memcpy(&seq, buffer + seq_start,  seq_stop - seq_start);
+		      seq[seq_stop - seq_start] = '\0';
 		      valid_rec = 1;
                }
 	   }
@@ -84,7 +85,8 @@
 		fputs(seq, fp_out);
 		fputc('\n', fp_out);
 		fputs(strand, fp_out);
-		memcpy(&quality, buffer + seq_start, seq_stop - seq_start - 1 );
+		memcpy(&quality, buffer + seq_start, seq_stop - seq_start);
+		quality[seq_stop - seq_start] = '\0';
 		fputs(quality, fp_out);
 		fputs("\n", fp_out);
 	   }
