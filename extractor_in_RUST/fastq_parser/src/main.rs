@@ -1,11 +1,7 @@
 extern crate regex;
 use regex::Regex;
 
-use std::io;
-use std::io::BufReader;
-use std::io::BufRead;
-use std::io::BufWriter;
-use std::io::Write;
+use std::io::{BufReader,BufRead,BufWriter,Write};
 use std::fs::File;
 use std::env;
 use std::process;
