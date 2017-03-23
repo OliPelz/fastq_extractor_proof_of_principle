@@ -34,8 +34,8 @@ fn main() {
     let mut count_total = 0;
     let mut count_extracted = 0;
 
-    let mut out_file = File::create("/tmp/out").expect("problem opening output file");
-    let mut statistics_file = File::create("/tmp/stats").expect("problem opening statistics file");
+    let mut out_file        = BufWriter::new(File::create("/tmp/out").expect("problem opening output file"));
+    let mut statistics_file = BufWriter::new(File::create("/tmp/stats").expect("problem opening statistics file"));
 
     for line in file.lines() {
         let l = line.expect("programmer error: no line to unwrap");
