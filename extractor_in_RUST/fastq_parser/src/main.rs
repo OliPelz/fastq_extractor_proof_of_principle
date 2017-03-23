@@ -44,7 +44,7 @@ fn main() {
 
         if n == 0 {
             // first line of record: header
-            fq_header = l.clone();
+            fq_header = l;
             found_hit = false;
             count_total += 1;
         } else if n == 1 {
@@ -62,7 +62,7 @@ fn main() {
             };
         } else if n == 2 && found_hit {
             // third line of record: strand
-            strand = l.clone()
+            strand = l
         } else if n == 3 && found_hit {
             // fourth/last line of record: store everything
             out_file.write((&fq_header).as_bytes()).unwrap();
