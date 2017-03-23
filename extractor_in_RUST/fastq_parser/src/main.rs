@@ -34,17 +34,17 @@ fn main() {
     let mut out_file        = BufWriter::new(File::create("/tmp/out").expect("problem opening output file"));
     let mut statistics_file = BufWriter::new(File::create("/tmp/stats").expect("problem opening statistics file"));
 
-    let mut cnt = 1;
-    for line in file.lines() {
+    for (line_number, line) in file.lines().enumerate() {
         let l = line.expect("programmer error: no line to unwrap");
-        let n = cnt % 4;
-        cnt = cnt + 1;
 
-        if  n == 1 {
+        let n = line_number % 4; // offset inside fastq record
+
+        if  n == 0 { // first line of record: header
             fq_header = l.clone();
             found_hit = false;
             count_total += 1;
-        } else if n == 2 {
+
+        } else if n == 1 { // second line of record
             match re.find(&l) {
                 None => continue,
                 Some(mat) => {
@@ -56,9 +56,11 @@ fn main() {
                     count_extracted += 1;
                 },
             };
-        } else if n == 3 && found_hit {
+
+        } else if n == 2 && found_hit { // third line of record: strand
             strand = l.clone()
-        } else if n ==0 && found_hit {
+
+        } else if n == 3 && found_hit { // fourth/last line of record: store everything
             out_file.write((&fq_header).as_bytes()).unwrap();
             out_file.write(b"\n").unwrap();
             out_file.write((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
