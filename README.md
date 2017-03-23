@@ -11,8 +11,6 @@ real	0m45.006s
 user	0m44.191s
 sys	0m0.682s
 ``` 
-
-```
 first benchmark without much optimization.
 
 RUST
