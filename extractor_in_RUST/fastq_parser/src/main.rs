@@ -63,15 +63,15 @@ fn main() {
             strand = l
         } else if n == 3 && found_hit {
             // fourth/last line of record: store everything
-            out_file.write((&fq_header).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
-            out_file.write((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
-            out_file.write((&strand).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
+            out_file.write_all((&fq_header).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
+            out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
+            out_file.write_all((&strand).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
 
-            out_file.write((&l[fq_start..fq_stop]).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
+            out_file.write_all((&l[fq_start..fq_stop]).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
         }
     }
 
