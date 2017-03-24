@@ -79,6 +79,5 @@ fn main() {
     println!("Total Reads in this file:\t {}", count_total);
     println!("Extracted Reads in this file with the matching pattern:\t {}",
              count_extracted);
-    println!("The provided pattern worked in:\t {}",
-             (count_extracted / count_total * 100));
+    println!("The provided pattern worked in:\t {}",(count_extracted as f32 / count_total as f32 * 100.0) );
 }
