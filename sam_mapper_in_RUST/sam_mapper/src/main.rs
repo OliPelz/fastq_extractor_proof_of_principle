@@ -12,12 +12,13 @@ use std::io::{BufReader, BufRead, BufWriter, Write};
 
 fn main() {
 
+
     let mut fasta_file_arg   = String::new();
     let mut sam_file_arg = String::new();
     let mut mapping_match_pattern = String::from("M{20,21}$");
     let mut geneid_pattern = String::from("_");
     let mut logfile_out    = String::from("./log.out");
-{
+{ // put the argparsing in its own scope
     let mut cli_parser = ArgumentParser::new();
     cli_parser.set_description("mapper for CRISPRanalyzer");
     
@@ -43,7 +44,22 @@ fn main() {
 
     cli_parser.parse_args_or_exit();
 }
+
+// first parse the fasta file
+    let fasta_geneid_re = Regex::new(format!("{}{}",String::from("^>(.+)"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
+    let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
+    for line in fasta_file.lines() {
+	let ln = line.unwrap();
+        if fasta_geneid_re.is_match(ln.as_str()) {
+	   println!("{}", ln);
+        } 
+    }
+      
+
+
+// our buffer
     let mut next_line = String::new();
+    
     let mut sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file"));
    
 // fast forward the sam header to the beginning of the
