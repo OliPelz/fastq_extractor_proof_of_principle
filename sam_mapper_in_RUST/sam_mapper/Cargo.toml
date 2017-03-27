@@ -1,0 +1,8 @@
+[package]
+name = "sam_mapper"
+version = "0.1.0"
+authors = ["Oliver Pelz <oliverpelz@gmail.com>"]
+
+[dependencies]
+regex = "0.2"
+
