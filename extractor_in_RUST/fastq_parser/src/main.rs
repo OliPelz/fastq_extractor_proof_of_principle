@@ -63,15 +63,15 @@ fn main() {
             strand = l
         } else if n == 3 && found_hit {
             // fourth/last line of record: store everything
-            out_file.write((&fq_header).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
-            out_file.write((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
-            out_file.write((&strand).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
+            out_file.write_all((&fq_header).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
+            out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
+            out_file.write_all((&strand).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
 
-            out_file.write((&l[fq_start..fq_stop]).as_bytes()).unwrap();
-            out_file.write(b"\n").unwrap();
+            out_file.write_all((&l[fq_start..fq_stop]).as_bytes()).unwrap();
+            out_file.write_all(b"\n").unwrap();
         }
     }
 
@@ -79,5 +79,5 @@ fn main() {
     println!("Total Reads in this file:\t {}", count_total);
     println!("Extracted Reads in this file with the matching pattern:\t {}",
              count_extracted);
-    println!("The provided pattern worked in:\t {}",(count_extracted as f32 / count_total as f32 * 100.0) );
+    println!("The provided pattern worked in:\t {:.2}%",(count_extracted as f32 / count_total as f32 * 100.0) );
 }
