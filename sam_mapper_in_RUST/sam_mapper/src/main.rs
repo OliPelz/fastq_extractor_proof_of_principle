@@ -46,13 +46,11 @@ fn main() {
 }
 
 // first parse the fasta file
-    let fasta_geneid_re = Regex::new(format!("{}{}",String::from("^>(.+)"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
+    let fasta_re = Regex::new(format!("{}{}",String::from("^>(.+)"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
     let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
     for line in fasta_file.lines() {
-	let ln = line.unwrap();
-        if fasta_geneid_re.is_match(ln.as_str()) {
-	   println!("{}", ln);
-        } 
+	let ln = line.expect('programmer error in reading fasta line by line');
+        let groups = fasta_re.captures(ln).unwrap();
     }
       
 
