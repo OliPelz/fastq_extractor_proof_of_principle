@@ -42,7 +42,7 @@ fn main() {
         cli_parser.parse_args_or_exit();
     }
 
-    // first parse the fasta file
+// first parse the fasta file
 
     let mut geneids = HashSet::<String>::new();
 
@@ -97,7 +97,7 @@ fn main() {
             // now split
             let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
             let gene_id = al_arr[2].split("_").nth(0).unwrap();
-            
+
             // the sam file format is so BAD that a certain position of any optional field cannot be
             // predicted for sure, so we need to parse the whole line for the mismatch string
             // at least we know that we have to search from the right end to the left because in the
