@@ -7,7 +7,7 @@ use std::env;
 use std::process;
 use std::fs::File;
 use argparse::{ArgumentParser, Store};
-
+use std::collections::HashSet;
 use std::io::{BufReader, BufRead, BufWriter, Write};
 
 fn main() {
@@ -46,13 +46,24 @@ fn main() {
 }
 
 // first parse the fasta file
-    let fasta_re = Regex::new(format!("{}{}",String::from("^>(.+)"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
+
+    let mut geneids = HashSet::new();
+    
+    let fasta_re = Regex::new(format!("{}{}",String::from("^>(.+)\n$"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
     let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
+    let mut ln;
+{
     for line in fasta_file.lines() {
-	let ln = line.expect('programmer error in reading fasta line by line');
-        let groups = fasta_re.captures(ln).unwrap();
-    }
-      
+	   ln = line.expect("programmer error in reading fasta line by line");
+       
+       let caps;
+       caps = fasta_re.captures(&ln).unwrap();
+       if caps.len() >= 1 {
+             geneids.insert(caps.get(1).map_or("", |m| m.as_str()));
+       }
+      }
+}
+    println!("{}", geneids.len()); 
 
 
 // our buffer
