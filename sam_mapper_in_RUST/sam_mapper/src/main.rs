@@ -85,11 +85,7 @@ fn main() {
 
     if !next_line.is_empty() {
         // thats how to construct a do { } while loop in RUST
-        let mut mismatches_allowed = false;
-
-        if mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X') {
-            mismatches_allowed = true;
-        }
+        let mismatches_allowed = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
         //let sam_mismatch_re = Regex::new(r"MD:Z:([0-9+]|[A-Z]+)+\s.*$" ).expect("programmer error in accession regex");
         let sam_mismatch_re = Regex::new(r"(MD:Z:[0-9A-Z]+).*").expect("programmer error in accession regex");
