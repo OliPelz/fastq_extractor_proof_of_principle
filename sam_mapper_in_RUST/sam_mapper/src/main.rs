@@ -47,22 +47,20 @@ fn main() {
 
 // first parse the fasta file
 
-    let mut geneids = HashSet::new();
+
+    let mut geneids: HashSet<String> = HashSet::new();    
     
     let fasta_re = Regex::new(format!("{}{}",String::from("^>(.+)\n$"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
     let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
-    let mut ln;
-{
+
     for line in fasta_file.lines() {
-	   ln = line.expect("programmer error in reading fasta line by line");
+	   let mut ln = line.expect("programmer error in reading fasta line by line");
        
-       let caps;
-       caps = fasta_re.captures(&ln).unwrap();
+       let caps = fasta_re.captures(&ln).unwrap();
        if caps.len() >= 1 {
-             geneids.insert(caps.get(1).map_or("", |m| m.as_str()));
+             geneids.insert(String::from(&caps[1]));
        }
-      }
-}
+    }
     println!("{}", geneids.len()); 
 
 
