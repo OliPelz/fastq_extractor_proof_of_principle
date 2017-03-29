@@ -54,10 +54,10 @@ fn main() {
         .expect("programmer error in accession regex");
     let fasta_file =
         BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
-    let mut ln;
+
     {
         for line in fasta_file.lines() {
-            ln = line.expect("programmer error in reading fasta line by line");
+            let ln = line.expect("programmer error in reading fasta line by line");
 
             let caps;
             caps = fasta_re.captures(&ln).unwrap();
