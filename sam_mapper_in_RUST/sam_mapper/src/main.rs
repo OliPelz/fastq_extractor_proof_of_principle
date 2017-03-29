@@ -55,8 +55,7 @@ fn main() {
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        let caps;
-        caps = fasta_re.captures(&ln).unwrap();
+        let caps = fasta_re.captures(&ln).unwrap();
         if let Some(first_cap) = caps.get(1) {
             geneids.insert(String::from(first_cap.as_str()));
         }
