@@ -3,8 +3,6 @@ extern crate argparse;
 
 
 use regex::Regex;
-use std::env;
-use std::process;
 use std::fs::File;
 use argparse::{ArgumentParser, Store};
 use std::collections::HashSet;
