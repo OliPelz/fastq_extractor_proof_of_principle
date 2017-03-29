@@ -48,7 +48,7 @@ fn main() {
 
     // first parse the fasta file
 
-    let mut geneids = HashSet::new();
+    let mut geneids = HashSet::<String>::new();
 
     let fasta_re = Regex::new(format!("{}{}", String::from("^>(.+)\n$"), geneid_pattern).as_str())
         .expect("programmer error in accession regex");
@@ -59,10 +59,9 @@ fn main() {
         for line in fasta_file.lines() {
             let ln = line.expect("programmer error in reading fasta line by line");
 
-            let caps;
-            caps = fasta_re.captures(&ln).unwrap();
-            if caps.len() >= 1 {
-                geneids.insert(caps.get(1).map_or("", |m| m.as_str()));
+            let caps = fasta_re.captures(&ln).unwrap();
+            if let Some(first_cap) = caps.get(1) {
+                geneids.insert(String::from(first_cap.as_str()));
             }
         }
     }
