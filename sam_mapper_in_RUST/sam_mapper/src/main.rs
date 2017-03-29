@@ -67,16 +67,14 @@ fn main() {
 // now to the sam parser
 // TODO: implement as XVS stream parser 
 // our buffer for the sam parser
-    let mut next_line = String::new();
-    
+    let mut next_line = String::new();    
     let mut sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file"));
-   
+
 // fast forward the sam header to the beginning of the
-// alignment section
+// alignment section - skip the header starting with @
    let mut alignment = String::from("");
   
    while sam_file.read_line(&mut next_line).unwrap() > 0 {
-	//println!("{}" , next_line);
 	if ! next_line.starts_with('@') {
 	  break;
 	}
@@ -86,29 +84,48 @@ fn main() {
 
    let mut count_total = 0;
 
+
    if ! next_line.is_empty() {
 // thats how to construct a do { } while loop in RUST
-      loop {
-	count_total += 1;
-        // ----------the basic algorithm starts here --- 
-	alignment = next_line.clone();
-	//print!("{}", alignment);
-	// now split
-	let mut al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
-        
-	let mut gene_id = al_arr[2].split("_").nth(0).unwrap();	
+       let mut mismatches_allowed = false;
+   
+       if mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X') {
+           mismatches_allowed = true;
+       }
+       
+       //let sam_mismatch_re = Regex::new(r"MD:Z:([0-9+]|[A-Z]+)+\s.*$" ).expect("programmer error in accession regex");
+       let sam_mismatch_re = Regex::new(r"(MD:Z:[0-9A-Z]+).*").expect("programmer error in accession regex");
+      
+       loop {
+	       count_total += 1;
+// ----------the basic algorithm starts here --- 
+	       alignment = next_line.clone();
+  	    // now split
+	       let mut al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+	       let mut gene_id = al_arr[2].split("_").nth(0).unwrap();	
+        // the sam file format is so BAD that a certain position of any optional field cannot be
+        // predicted for sure, so we need to parse the whole line for the mismatch string
+        // at least we know that we have to search from the right end to the left because in the
+        // beginning we have mandantory fields (first 11)
+           let mut found_mismatches = false;
+           //println!("{}", alignment);
+           for caps in sam_mismatch_re.captures_iter(&alignment) {
+              //geneids.insert(String::from(&caps[1]));
+              found_mismatches = true;
+              println!("BINGO {}", &caps[1]);
+           }
+    
+
+
+
+// --------- end of basic algorithm ---
 	
-
-
-
-	// --------- end of basic algorithm ---
-	
-	next_line.clear();
-// get next alignment
-	if sam_file.read_line(&mut next_line).unwrap() == 0 {
-	  next_line.clear();
-          break;
-	}
+	      next_line.clear();
+          // get next alignment
+	      if sam_file.read_line(&mut next_line).unwrap() == 0 {
+	         next_line.clear();
+            break;
+	     }
       } 
    }
    

@@ -1,3 +1,5 @@
 target
 extractor
 mapper
+.*.swp
+.*.swo
