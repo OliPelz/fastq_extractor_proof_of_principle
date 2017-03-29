@@ -50,21 +50,23 @@ fn main() {
 
     let mut geneids: HashSet<String> = HashSet::new();    
     
-    let fasta_re = Regex::new(format!("{}{}",String::from("^>(.+)\n$"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
+    let fasta_re = Regex::new(format!(r"{}{}.+$",String::from("^>(.+)"), geneid_pattern ).as_str()).expect("programmer error in accession regex");
+    //let fasta_re = Regex::new(r"^>(.+)_.+$").expect("programmer error in accession regex");
     let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
 
     for line in fasta_file.lines() {
-	   let mut ln = line.expect("programmer error in reading fasta line by line");
+	   let ln = line.expect("programmer error in reading fasta line by line");
        
-       let caps = fasta_re.captures(&ln).unwrap();
-       if caps.len() >= 1 {
-             geneids.insert(String::from(&caps[1]));
+       for caps in fasta_re.captures_iter(&ln) {
+          geneids.insert(String::from(&caps[1]));
        }
     }
-    println!("{}", geneids.len()); 
+    //println!("{}", geneids.len() );
 
 
-// our buffer
+// now to the sam parser
+// TODO: implement as XVS stream parser 
+// our buffer for the sam parser
     let mut next_line = String::new();
     
     let mut sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file"));
