@@ -95,8 +95,8 @@ fn main() {
             // ----------the basic algorithm starts here ---
             alignment = next_line.clone();
             // now split
-            let mut al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
-            let mut gene_id = al_arr[2].split("_").nth(0).unwrap();
+            let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+            let gene_id = al_arr[2].split("_").nth(0).unwrap();
             
             // the sam file format is so BAD that a certain position of any optional field cannot be
             // predicted for sure, so we need to parse the whole line for the mismatch string
