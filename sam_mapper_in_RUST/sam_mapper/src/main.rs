@@ -112,14 +112,8 @@ fn main() {
                 found_mismatch = true;
             }
 
-
-            let mut skip = false;
-
             // do some prechecks to safe computation time...skip the obvious
-            if(!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch) {
-                skip = true;
-            }
-                
+            let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
             if !skip {
                 // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
                 // MMMMMMMMMMIDDDDD
