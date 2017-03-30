@@ -103,13 +103,7 @@ fn main() {
             // predicted for sure, so we need to parse the whole line for the mismatch string
             // at least we know that we have to search from the right end to the left because in the
             // beginning we have mandantory fields (first 11)
-            let mut found_mismatch = false;
-           // println!("{}", alignment);
-            
-            
-            for caps in sam_mismatch_re.captures_iter(&alignment) {
-                found_mismatch = true;
-            }
+            let found_mismatch = sam_mismatch_re.find_iter(&alignment).any(|_| true);
 
             // do some prechecks to safe computation time...skip the obvious
             let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
