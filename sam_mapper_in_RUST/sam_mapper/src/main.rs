@@ -88,8 +88,8 @@ fn main() {
         // thats how to construct a do { } while loop in RUST
         let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
-        let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in accession regex");
-        let match_string_re = Regex::new(r"(([0-9]+)([MID]))+").expect("programmer error in accession regex");
+        let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in mismatch regex");
+        let match_string_re = Regex::new(r"(([0-9]+)([MID]))+").expect("programmer error in match regex");
         loop {
             count_total += 1;
             // ----------the basic algorithm starts here ---
