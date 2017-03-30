@@ -83,45 +83,45 @@ fn main() {
             continue;
         }
 
-            count_total += 1;
-            // ----------the basic algorithm starts here ---
-            let alignment: String = next_line;
-            
-            // the sam file format is so BAD that a certain position of any optional field cannot be
-            // predicted for sure, so we need to parse the whole line for the mismatch string
-            // at least we know that we have to search from the right end to the left because in the
-            // beginning we have mandantory fields (first 11)
-            let found_mismatch = sam_mismatch_re.is_match(&alignment);
+        count_total += 1;
+        // ----------the basic algorithm starts here ---
+        let alignment: String = next_line;
 
-            // now split
-            let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
-            //println!("{}", al_arr[2]);
-            let gene_id = al_arr[2].split("_").nth(0).unwrap();
+        // the sam file format is so BAD that a certain position of any optional field cannot be
+        // predicted for sure, so we need to parse the whole line for the mismatch string
+        // at least we know that we have to search from the right end to the left because in the
+        // beginning we have mandantory fields (first 11)
+        let found_mismatch = sam_mismatch_re.is_match(&alignment);
+
+        // now split
+        let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+        //println!("{}", al_arr[2]);
+        let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
 
-            // do some prechecks to safe computation time...skip the obvious
-            let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
-            if !skip {
-                // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
-                // MMMMMMMMMMIDDDDD
-                let mut match_string = String::new();
-                for caps in match_string_re.captures_iter(&al_arr[5]) {
-                    println!("{}",&caps[2]);
-                    let until: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
-                    for i in 1..until {
-                        //print!("{}", &caps[3]);
-                    }
-                    println!();
-                    //println!("BINGO {}", &caps[1]);
+        // do some prechecks to safe computation time...skip the obvious
+        let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
+        if !skip {
+            // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
+            // MMMMMMMMMMIDDDDD
+            let mut match_string = String::new();
+            for caps in match_string_re.captures_iter(&al_arr[5]) {
+                println!("{}",&caps[2]);
+                let until: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
+                for i in 1..until {
+                    //print!("{}", &caps[3]);
                 }
-                // now introduce mismatches if needed
-                if(found_mismatch){
-                    
-                }
+                println!();
+                //println!("BINGO {}", &caps[1]);
+            }
+            // now introduce mismatches if needed
+            if(found_mismatch){
 
             }
 
-            // --------- end of basic algorithm ---
+        }
+
+        // --------- end of basic algorithm ---
     }
 
     println!("Total\tMatched");
