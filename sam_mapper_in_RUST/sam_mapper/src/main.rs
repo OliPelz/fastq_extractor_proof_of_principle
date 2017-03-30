@@ -70,38 +70,34 @@ fn main() {
     // now to the sam parser
     // TODO: implement as XVS stream parser
     // our buffer for the sam parser
-    let mut next_line = String::new();
-    let mut sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file"));
-
-    // fast forward the sam header to the beginning of the
-    // alignment section - skip the header starting with @
-    while sam_file.read_line(&mut next_line).unwrap() > 0 {
-        if !next_line.starts_with('@') {
-            break;
-        }
-        next_line.clear();
-    }
+    let sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file")).lines();
 
 
     let mut count_total = 0;
-    if !next_line.is_empty() {
+    for l in sam_file {
+        let next_line = l.expect("io-error reading from samfile");
 
-        // thats how to construct a do { } while loop in RUST
-        loop {
+        // fast forward the sam header to the beginning of the
+        // alignment section - skip the header starting with @
+        if next_line.starts_with('@') {
+            continue;
+        }
+
             count_total += 1;
             // ----------the basic algorithm starts here ---
-            let alignment = next_line.clone();
+            let alignment: String = next_line;
             
-            // now split
-            let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
-            //println!("{}", al_arr[2]);
-            let gene_id = al_arr[2].split("_").nth(0).unwrap();
-
             // the sam file format is so BAD that a certain position of any optional field cannot be
             // predicted for sure, so we need to parse the whole line for the mismatch string
             // at least we know that we have to search from the right end to the left because in the
             // beginning we have mandantory fields (first 11)
             let found_mismatch = sam_mismatch_re.is_match(&alignment);
+
+            // now split
+            let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+            //println!("{}", al_arr[2]);
+            let gene_id = al_arr[2].split("_").nth(0).unwrap();
+
 
             // do some prechecks to safe computation time...skip the obvious
             let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
@@ -126,13 +122,6 @@ fn main() {
             }
 
             // --------- end of basic algorithm ---
-
-            next_line.clear();
-            // get next alignment
-            if sam_file.read_line(&mut next_line).unwrap() == 0 {
-                break;
-            }
-        }
     }
 
     println!("Total\tMatched");
