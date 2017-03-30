@@ -46,9 +46,8 @@ fn main() {
 
     let mut geneids = HashSet::<String>::new();
 
-    let fasta_re = Regex::new(format!(r"{}{}.+$", String::from("^>(.+)"), geneid_pattern).as_str())
+    let fasta_re = Regex::new(format!(r"^>(.+){}", geneid_pattern).as_str())
             .expect("programmer error in accession regex");
-    //let fasta_re = Regex::new(r"^>(.+)_.+$").expect("programmer error in accession regex");
 
     let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
 
