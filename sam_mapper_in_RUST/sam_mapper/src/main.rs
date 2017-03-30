@@ -55,9 +55,10 @@ fn main() {
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        let caps = fasta_re.captures(&ln).unwrap();
-        if let Some(first_cap) = caps.get(1) {
-            geneids.insert(String::from(first_cap.as_str()));
+        for cap in fasta_re.captures_iter(&ln) {
+           if let Some(first_cap) = cap.get(1) {
+               geneids.insert(String::from(first_cap.as_str()));
+           }
         }
     }
     //println!("{}", geneids.len());
@@ -87,15 +88,16 @@ fn main() {
         // thats how to construct a do { } while loop in RUST
         let mismatches_allowed = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
-        //let sam_mismatch_re = Regex::new(r"MD:Z:([0-9+]|[A-Z]+)+\s.*$" ).expect("programmer error in accession regex");
-        let sam_mismatch_re = Regex::new(r"(MD:Z:[0-9A-Z]+).*").expect("programmer error in accession regex");
+        let sam_mismatch_re = Regex::new(r"MD:Z:([0-9A-Z]+)\s.*\n$" ).expect("programmer error in accession regex");
 
         loop {
             count_total += 1;
             // ----------the basic algorithm starts here ---
             alignment = next_line.clone();
+            
             // now split
             let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+            //println!("{}", al_arr[2]);
             let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
             // the sam file format is so BAD that a certain position of any optional field cannot be
@@ -103,7 +105,7 @@ fn main() {
             // at least we know that we have to search from the right end to the left because in the
             // beginning we have mandantory fields (first 11)
             let mut found_mismatches = false;
-            //println!("{}", alignment);
+           // println!("{}", alignment);
             for caps in sam_mismatch_re.captures_iter(&alignment) {
                 //geneids.insert(String::from(&caps[1]));
                 found_mismatches = true;
