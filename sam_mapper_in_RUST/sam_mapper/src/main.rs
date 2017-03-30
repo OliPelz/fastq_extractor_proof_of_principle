@@ -80,8 +80,6 @@ fn main() {
 
 
     let mut count_total = 0;
-    let mut alignment = String::from("");
-
     if !next_line.is_empty() {
         let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
@@ -92,7 +90,7 @@ fn main() {
         loop {
             count_total += 1;
             // ----------the basic algorithm starts here ---
-            alignment = next_line.clone();
+            let alignment = next_line.clone();
             
             // now split
             let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
