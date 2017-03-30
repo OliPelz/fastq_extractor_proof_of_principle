@@ -88,7 +88,7 @@ fn main() {
         // thats how to construct a do { } while loop in RUST
         let mismatches_allowed = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
-        let sam_mismatch_re = Regex::new(r"MD:Z:([0-9A-Z]+)\s.*\n$" ).expect("programmer error in accession regex");
+        let sam_mismatch_re = Regex::new(r"MD:Z:([0-9A-Z]+)" ).expect("programmer error in accession regex");
 
         loop {
             count_total += 1;
