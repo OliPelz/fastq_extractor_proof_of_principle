@@ -107,10 +107,9 @@ fn main() {
             let mut found_mismatch = false;
            // println!("{}", alignment);
             
+            
             for caps in sam_mismatch_re.captures_iter(&alignment) {
-                //geneids.insert(String::from(&caps[1]));
                 found_mismatch = true;
-                //println!("BINGO {}", &caps[1]);
             }
 
 
@@ -136,7 +135,7 @@ fn main() {
                 }
                 // now introduce mismatches if needed
                 if(found_mismatch){
-
+                    
                 }
 
             }
