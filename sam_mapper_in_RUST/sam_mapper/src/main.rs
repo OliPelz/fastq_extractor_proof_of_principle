@@ -130,7 +130,6 @@ fn main() {
             next_line.clear();
             // get next alignment
             if sam_file.read_line(&mut next_line).unwrap() == 0 {
-                next_line.clear();
                 break;
             }
         }
