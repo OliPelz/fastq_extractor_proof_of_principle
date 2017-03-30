@@ -71,8 +71,6 @@ fn main() {
 
     // fast forward the sam header to the beginning of the
     // alignment section - skip the header starting with @
-    let mut alignment = String::from("");
-
     while sam_file.read_line(&mut next_line).unwrap() > 0 {
         if !next_line.starts_with('@') {
             break;
@@ -82,6 +80,7 @@ fn main() {
 
 
     let mut count_total = 0;
+    let mut alignment = String::from("");
 
     if !next_line.is_empty() {
         let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
