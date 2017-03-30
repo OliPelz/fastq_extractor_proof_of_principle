@@ -54,14 +54,14 @@ fn main() {
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        for cap in fasta_re.captures_iter(&ln) {
-           if let Some(first_cap) = cap.get(1) {
-               geneids.insert(String::from(first_cap.as_str()));
-           }
-        }
+        geneids.extend(
+            fasta_re.captures_iter(&ln).map(|captures: regex::Captures| // iterate over all Matches, which may have multiple capture groups each
+                captures.get(1) // of this match, take the first capture group
+                .expect("fasta regex match should have had first capture group")
+                .as_str().to_owned() // make Owned copy of capture-group contents
+            )
+        );
     }
-    //println!("{}", geneids.len());
-
 
     // now to the sam parser
     // TODO: implement as XVS stream parser
