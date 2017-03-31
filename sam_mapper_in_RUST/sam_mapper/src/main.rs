@@ -49,7 +49,7 @@ fn main() {
     let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
             .expect("programmer error in accession regex");
     let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in mismatch regex");
-    let match_string_re = Regex::new(r"([0-9]+)([MID]))+").expect("programmer error in match regex");
+    let match_string_re = Regex::new(r"([0-9]+)([MID])").expect("programmer error in match regex");
 
     let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
