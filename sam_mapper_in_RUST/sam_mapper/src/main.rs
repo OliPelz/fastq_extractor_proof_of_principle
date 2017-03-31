@@ -105,18 +105,13 @@ fn main() {
             // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
             // MMMMMMMMMMIDDDDD
             let mut match_string = String::new();
-            let char_pos = 0;
             for caps in match_string_re.captures_iter(&al_arr[5]) {
-                println!("{}",&caps[2]);
                 let mut until_pos: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
-                for char_pos in 1..until_pos {
-                    until_pos += 1;
+                for char_pos in 0..until_pos {
                     match_string.push_str(&caps[3]);
                 }
-                //println!();
-                println!("BINGO {}", &match_string);
             }
-            // now introduce mismatches if needed
+            // now introduce mismatches int the string if needed
             if(found_mismatch){
 
             }
