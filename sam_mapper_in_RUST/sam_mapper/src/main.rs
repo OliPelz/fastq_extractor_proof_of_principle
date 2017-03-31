@@ -48,8 +48,9 @@ fn main() {
 
     let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
             .expect("programmer error in accession regex");
-    let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in mismatch regex");
+    let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)[0-9]+" ).expect("programmer error in mismatch regex");
     let match_string_re = Regex::new(r"([0-9]+)([MID])").expect("programmer error in match regex");
+    let mapping_match_re = Regex::new(&mapping_match_pattern).expect("programmer error in mapping match regexp");
 
     let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
@@ -94,6 +95,19 @@ fn main() {
         //println!("{}", al_arr[2]);
         let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
+        let mut found_mismatch = false;
+        // the sam file format is so BAD that a certain position of any optional field cannot be
+        // predicted for sure, so we need to parse the whole line for the mismatch string
+        // at least we know that we have to search from the right end to the left because in the
+        // beginning we have mandantory fields (first 11)
+
+        let mut mm_positions  = Vec::new();
+        for caps in sam_mismatch_re.captures_iter(&next_line) {
+            let mm_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
+            mm_positions.push(mm_pos);
+
+            found_mismatch = true;
+        }    
 
         // do some prechecks to safe computation time...skip the obvious
         let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
@@ -109,18 +123,15 @@ fn main() {
             }
             // now introduce mismatches int the string if needed
             if(found_mismatch){
-                // the sam file format is so BAD that a certain position of any optional field cannot be
-                // predicted for sure, so we need to parse the whole line for the mismatch string
-                // at least we know that we have to search from the right end to the left because in the
-                // beginning we have mandantory fields (first 11)
-                for caps in sam_mismatch_re.captures_iter(&l) {
-                    for char_pos in 0..until_pos {
-                        match_string.push_str(&caps[3]);
-                    }
+                for pos in mm_positions {
+                    // TODO: next line is not compiling
+                    match_string.insert_str(&pos, "X"); 
                 }
-                
             }
-
+            // now apply input mapping regex
+            if(mapping_match_re.is_match(&match_string)) {
+                 println!("Match {} {}", match_string, mapping_match_pattern);
+            }
         }
 
         // --------- end of basic algorithm ---
