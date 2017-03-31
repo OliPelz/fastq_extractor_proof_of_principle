@@ -86,12 +86,10 @@ fn main() {
 
         count_total += 1;
         // ----------the basic algorithm starts here ---
-        let alignment: String = next_line;
-
 
 
         // now split
-        let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+        let al_arr: Vec<&str> = next_line.trim_right().split("\t").collect();
         //println!("{}", al_arr[2]);
         let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
@@ -101,10 +99,10 @@ fn main() {
         // at least we know that we have to search from the right end to the left because in the
         // beginning we have mandantory fields (first 11)
 
-        let mut mm_positions  = Vec::new();
+        let mut mm_positions: Vec<usize>  = Vec::new();
         for caps in sam_mismatch_re.captures_iter(&next_line) {
             let mm_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
-            mm_positions.push(mm_pos);
+            mm_positions.push(mm_pos as usize);
 
             found_mismatch = true;
         }    
@@ -125,7 +123,7 @@ fn main() {
             if(found_mismatch){
                 for pos in mm_positions {
                     // TODO: next line is not compiling
-                    match_string.insert_str(&pos, "X"); 
+                    match_string.insert_str(pos, "X"); 
                 }
             }
             // now apply input mapping regex
