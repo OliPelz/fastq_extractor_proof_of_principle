@@ -46,109 +46,82 @@ fn main() {
 
     let mut geneids = HashSet::<String>::new();
 
-    let fasta_re = Regex::new(format!(r"{}{}.+$", String::from("^>(.+)"), geneid_pattern).as_str())
+    let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
             .expect("programmer error in accession regex");
-    //let fasta_re = Regex::new(r"^>(.+)_.+$").expect("programmer error in accession regex");
+    let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in mismatch regex");
+    let match_string_re = Regex::new(r"(([0-9]+)([MID]))+").expect("programmer error in match regex");
+
+    let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
     let fasta_file = BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
 
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        for cap in fasta_re.captures_iter(&ln) {
-           if let Some(first_cap) = cap.get(1) {
-               geneids.insert(String::from(first_cap.as_str()));
-           }
-        }
+        geneids.extend(
+            fasta_re.captures_iter(&ln).map(|captures: regex::Captures| // iterate over all Matches, which may have multiple capture groups each
+                captures.get(1) // of this match, take the first capture group
+                .expect("fasta regex match should have had first capture group")
+                .as_str().to_owned() // make Owned copy of capture-group contents
+            )
+        );
     }
-    //println!("{}", geneids.len());
-
 
     // now to the sam parser
     // TODO: implement as XVS stream parser
     // our buffer for the sam parser
-    let mut next_line = String::new();
-    let mut sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file"));
-
-    // fast forward the sam header to the beginning of the
-    // alignment section - skip the header starting with @
-    let mut alignment = String::from("");
-
-    while sam_file.read_line(&mut next_line).unwrap() > 0 {
-        if !next_line.starts_with('@') {
-            break;
-        }
-        next_line.clear();
-    }
+    let sam_file = BufReader::new(File::open(&mut sam_file_arg).expect("Problem opening fastq file")).lines();
 
 
     let mut count_total = 0;
+    for l in sam_file {
+        let next_line = l.expect("io-error reading from samfile");
 
-    if !next_line.is_empty() {
-        // thats how to construct a do { } while loop in RUST
-        let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
-
-        let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in accession regex");
-        let match_string_re = Regex::new(r"(([0-9]+)([MID]))+").expect("programmer error in accession regex");
-        loop {
-            count_total += 1;
-            // ----------the basic algorithm starts here ---
-            alignment = next_line.clone();
-            
-            // now split
-            let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
-            //println!("{}", al_arr[2]);
-            let gene_id = al_arr[2].split("_").nth(0).unwrap();
-
-            // the sam file format is so BAD that a certain position of any optional field cannot be
-            // predicted for sure, so we need to parse the whole line for the mismatch string
-            // at least we know that we have to search from the right end to the left because in the
-            // beginning we have mandantory fields (first 11)
-            let mut found_mismatch = false;
-           // println!("{}", alignment);
-            
-            
-            for caps in sam_mismatch_re.captures_iter(&alignment) {
-                found_mismatch = true;
-            }
-
-
-            let mut skip = false;
-
-            // do some prechecks to safe computation time...skip the obvious
-            if(!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch) {
-                skip = true;
-            }
-                
-            if !skip {
-                // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
-                // MMMMMMMMMMIDDDDD
-                let mut match_string = String::new();
-                for caps in match_string_re.captures_iter(&al_arr[5]) {
-                    println!("{}",&caps[2]);
-                    let until: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
-                    for i in 1..until {
-                        //print!("{}", &caps[3]);
-                    }
-                    println!();
-                    //println!("BINGO {}", &caps[1]);
-                }
-                // now introduce mismatches if needed
-                if(found_mismatch){
-                    
-                }
-
-            }
-
-            // --------- end of basic algorithm ---
-
-            next_line.clear();
-            // get next alignment
-            if sam_file.read_line(&mut next_line).unwrap() == 0 {
-                next_line.clear();
-                break;
-            }
+        // fast forward the sam header to the beginning of the
+        // alignment section - skip the header starting with @
+        if next_line.starts_with('@') {
+            continue;
         }
+
+        count_total += 1;
+        // ----------the basic algorithm starts here ---
+        let alignment: String = next_line;
+
+        // the sam file format is so BAD that a certain position of any optional field cannot be
+        // predicted for sure, so we need to parse the whole line for the mismatch string
+        // at least we know that we have to search from the right end to the left because in the
+        // beginning we have mandantory fields (first 11)
+        let found_mismatch = sam_mismatch_re.is_match(&alignment);
+
+        // now split
+        let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
+        //println!("{}", al_arr[2]);
+        let gene_id = al_arr[2].split("_").nth(0).unwrap();
+
+
+        // do some prechecks to safe computation time...skip the obvious
+        let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
+        if !skip {
+            // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
+            // MMMMMMMMMMIDDDDD
+            let mut match_string = String::new();
+            for caps in match_string_re.captures_iter(&al_arr[5]) {
+                println!("{}",&caps[2]);
+                let until: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
+                for i in 1..until {
+                    //print!("{}", &caps[3]);
+                }
+                println!();
+                //println!("BINGO {}", &caps[1]);
+            }
+            // now introduce mismatches if needed
+            if(found_mismatch){
+
+            }
+
+        }
+
+        // --------- end of basic algorithm ---
     }
 
     println!("Total\tMatched");
