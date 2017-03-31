@@ -87,11 +87,7 @@ fn main() {
         // ----------the basic algorithm starts here ---
         let alignment: String = next_line;
 
-        // the sam file format is so BAD that a certain position of any optional field cannot be
-        // predicted for sure, so we need to parse the whole line for the mismatch string
-        // at least we know that we have to search from the right end to the left because in the
-        // beginning we have mandantory fields (first 11)
-        let found_mismatch = sam_mismatch_re.is_match(&alignment);
+
 
         // now split
         let al_arr: Vec<&str> = alignment.trim_right().split("\t").collect();
@@ -106,14 +102,23 @@ fn main() {
             // MMMMMMMMMMIDDDDD
             let mut match_string = String::new();
             for caps in match_string_re.captures_iter(&al_arr[5]) {
-                let mut until_pos: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
+                let until_pos: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
                 for char_pos in 0..until_pos {
                     match_string.push_str(&caps[3]);
                 }
             }
             // now introduce mismatches int the string if needed
             if(found_mismatch){
-
+                // the sam file format is so BAD that a certain position of any optional field cannot be
+                // predicted for sure, so we need to parse the whole line for the mismatch string
+                // at least we know that we have to search from the right end to the left because in the
+                // beginning we have mandantory fields (first 11)
+                for caps in sam_mismatch_re.captures_iter(&l) {
+                    for char_pos in 0..until_pos {
+                        match_string.push_str(&caps[3]);
+                    }
+                }
+                
             }
 
         }
