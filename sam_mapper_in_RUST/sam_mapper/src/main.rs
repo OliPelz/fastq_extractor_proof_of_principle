@@ -49,7 +49,7 @@ fn main() {
     let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
             .expect("programmer error in accession regex");
     let sam_mismatch_re = Regex::new(r"MD:Z:([0-9]+)([A-Z]+)([0-9])+" ).expect("programmer error in mismatch regex");
-    let match_string_re = Regex::new(r"(([0-9]+)([MID]))+").expect("programmer error in match regex");
+    let match_string_re = Regex::new(r"([0-9]+)([MID]))+").expect("programmer error in match regex");
 
     let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
 
@@ -105,14 +105,16 @@ fn main() {
             // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
             // MMMMMMMMMMIDDDDD
             let mut match_string = String::new();
+            let char_pos = 0;
             for caps in match_string_re.captures_iter(&al_arr[5]) {
                 println!("{}",&caps[2]);
-                let until: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
-                for i in 1..until {
-                    //print!("{}", &caps[3]);
+                let mut until_pos: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
+                for char_pos in 1..until_pos {
+                    until_pos += 1;
+                    match_string.push_str(&caps[3]);
                 }
-                println!();
-                //println!("BINGO {}", &caps[1]);
+                //println!();
+                println!("BINGO {}", &match_string);
             }
             // now introduce mismatches if needed
             if(found_mismatch){
