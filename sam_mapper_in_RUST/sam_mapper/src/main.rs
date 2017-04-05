@@ -75,6 +75,9 @@ fn main() {
 
 
     let mut count_total = 0;
+    
+    let mut mapped_geneids = HashSet::<String>::new();
+    
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
 
@@ -101,7 +104,7 @@ fn main() {
 
         let mut mm_positions: Vec<usize>  = Vec::new();
         for caps in sam_mismatch_re.captures_iter(&next_line) {
-            let mm_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
+            let mm_pos: i32 = caps[1].parse().expect("programmer error: cannot parse string to number for iterating");
             mm_positions.push(mm_pos as usize);
 
             found_mismatch = true;
@@ -114,9 +117,10 @@ fn main() {
             // MMMMMMMMMMIDDDDD
             let mut match_string = String::new();
             for caps in match_string_re.captures_iter(&al_arr[5]) {
-                let until_pos: i32 = caps[2].parse().expect("programmer error: cannot convert string to number for iterating");
+                //println!("{}", &caps[1]);
+                let until_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
                 for char_pos in 0..until_pos {
-                    match_string.push_str(&caps[3]);
+                    match_string.push_str(&caps[2]);
                 }
             }
             // now introduce mismatches int the string if needed
@@ -128,13 +132,18 @@ fn main() {
             }
             // now apply input mapping regex
             if(mapping_match_re.is_match(&match_string)) {
-                 println!("Match {} {}", match_string, mapping_match_pattern);
+                 let x = al_arr[2].to_owned().clone();
+                 if ! mapped_geneids.contains(&x) {
+                    mapped_geneids.insert(x);
+                 }
             }
         }
 
         // --------- end of basic algorithm ---
     }
-
+    for item in &mapped_geneids {
+       println!("{:?}", item);
+    }
     println!("Total\tMatched");
     println!("{}\t{}", count_total, count_total);
 }
