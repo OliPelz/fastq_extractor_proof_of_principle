@@ -6,6 +6,7 @@ use regex::Regex;
 use std::fs::File;
 use argparse::{ArgumentParser, Store};
 use std::collections::HashSet;
+use std::collections::HashMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
 
 fn main() {
@@ -76,7 +77,7 @@ fn main() {
 
     let mut count_total = 0;
     
-    let mut mapped_geneids = HashSet::<String>::new();
+    let mut mapped_geneids : HashMap<String, i32> = HashMap::new();
     
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
@@ -114,7 +115,7 @@ fn main() {
         let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
         if !skip {
             // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
-            // MMMMMMMMMMIDDDDD
+            // MMMMMMMMMMIDDDDD, 20M1D = 
             let mut match_string = String::new();
             for caps in match_string_re.captures_iter(&al_arr[5]) {
                 //println!("{}", &caps[1]);
@@ -132,18 +133,25 @@ fn main() {
             }
             // now apply input mapping regex
             if(mapping_match_re.is_match(&match_string)) {
-                 let x = al_arr[2].to_owned().clone();
-                 if ! mapped_geneids.contains(&x) {
-                    mapped_geneids.insert(x);
+                 let mut x = al_arr[2].to_owned().clone();
+                 let mut val = 0;
+                 if ! mapped_geneids.contains_key(&x) {
+                    val = 1;
                  }
+                 else {
+                    val = mapped_geneids.get(&x).expect("cannot get element x") + 1;
+                 }
+                 mapped_geneids.insert(x, val);
             }
         }
 
         // --------- end of basic algorithm ---
     }
-    for item in &mapped_geneids {
-       println!("{:?}", item);
+    println!("sgRNA\tCount");
+    for (k,v) in &mapped_geneids {
+       println!("{}\t{}", k.replace("\"",""), v);
     }
+
     println!("Total\tMatched");
     println!("{}\t{}", count_total, count_total);
 }
