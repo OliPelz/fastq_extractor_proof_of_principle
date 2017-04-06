@@ -11,38 +11,14 @@ use std::collections::HashMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
 
 fn main() {
+    // buffers to hold parsed arguments
     let mut fasta_file_arg = String::new();
     let mut sam_file_arg = String::new();
     let mut mapping_match_pattern = String::from("M{20,21}$");
     let mut geneid_pattern = String::from("_");
     let mut logfile_out = String::from("./log.out");
-    {
-        // put the argparsing in its own scope
-        let mut cli_parser = ArgumentParser::new();
-        cli_parser.set_description("mapper for CRISPRanalyzer");
 
-        cli_parser.refer(&mut fasta_file_arg)
-            .add_option(&["-f", "--fasta-file"], Store, "Fasta Library Input File")
-            .required();
-
-        cli_parser.refer(&mut sam_file_arg)
-            .add_option(&["-s", "--sam-file"], Store, "Sam Input file")
-            .required();
-
-        cli_parser.refer(&mut mapping_match_pattern)
-            .add_option(&["-m", "--match-pattern"], Store,
-            "Mapping match pattern e.g. M{20,21}$");
-
-        cli_parser.refer(&mut geneid_pattern).add_option(&["-g", "--geneid-pattern"],
-                                                         Store,
-                                                         "GeneId pattern to parse, e.g. '_'");
-
-        cli_parser.refer(&mut logfile_out).add_option(&["-l", "--logfile"],
-                                                      Store,
-                                                      "Logfile filename");
-
-        cli_parser.parse_args_or_exit();
-    }
+    parse_args(&mut fasta_file_arg, &mut sam_file_arg, &mut mapping_match_pattern, &mut geneid_pattern, &mut logfile_out);
 
     let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
             .expect("programmer error in accession regex");
@@ -158,4 +134,33 @@ fn main() {
 
     println!("Total\tMatched");
     println!("{}\t{}", count_total, count_total);
+}
+
+fn parse_args(fasta_file_arg: &mut String, sam_file_arg: &mut String, mapping_match_pattern: &mut String,
+geneid_pattern: &mut String, logfile_out: &mut String) {
+    // put the argparsing in its own scope
+    let mut cli_parser = ArgumentParser::new();
+    cli_parser.set_description("mapper for CRISPRanalyzer");
+
+    cli_parser.refer(fasta_file_arg)
+        .add_option(&["-f", "--fasta-file"], Store, "Fasta Library Input File")
+        .required();
+
+    cli_parser.refer(sam_file_arg)
+        .add_option(&["-s", "--sam-file"], Store, "Sam Input file")
+        .required();
+
+    cli_parser.refer(mapping_match_pattern)
+        .add_option(&["-m", "--match-pattern"], Store,
+                    "Mapping match pattern e.g. M{20,21}$");
+
+    cli_parser.refer(geneid_pattern).add_option(&["-g", "--geneid-pattern"],
+                                                     Store,
+                                                     "GeneId pattern to parse, e.g. '_'");
+
+    cli_parser.refer(logfile_out).add_option(&["-l", "--logfile"],
+                                                  Store,
+                                                  "Logfile filename");
+
+    cli_parser.parse_args_or_exit();
 }
