@@ -111,7 +111,7 @@ fn process_sam(sam_file: &str,
 
     let sam_mismatch_re =
         Regex::new(r"MD:Z:([0-9]+)([A-Z]+)[0-9]+").expect("programmer error in mismatch regex");
-    let match_string_re = Regex::new(r"([0-9]+)([MID])").expect("programmer error in match regex");
+    let match_string_re = Regex::new(r"([0-9]+)([MIDSH])").expect("programmer error in match regex");
     let mapping_match_re =
         Regex::new(mapping_match_pattern).expect("programmer error in mapping match regexp");
 
