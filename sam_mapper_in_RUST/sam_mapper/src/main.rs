@@ -173,12 +173,7 @@ fn process_sam(sam_file: &str,
             // now apply input mapping regex
             if mapping_match_re.is_match(&match_string) {
                 let x = al_arr[2].to_owned().clone();
-                let val = if !mapped_geneids.contains_key(&x) {
-                    1
-                } else {
-                    mapped_geneids.get(&x).expect("cannot get element x") + 1
-                };
-                mapped_geneids.insert(x, val);
+                *mapped_geneids.entry(x).or_insert(0) += 1;
             }
         }
 
