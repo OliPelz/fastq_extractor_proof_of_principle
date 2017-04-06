@@ -45,7 +45,7 @@ fn main() {
 
 // first parse the fasta file
 
-    let mut geneids = HashSet::<String>::new();
+    let mut mapped_geneids : HashMap<String, i32> = HashMap::new();
 
     let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
             .expect("programmer error in accession regex");
@@ -59,14 +59,21 @@ fn main() {
 
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
+        
+        mapped_geneids.insert(ln.trim_left_matches(">").to_owned(), 0);
 
-        geneids.extend(
-            fasta_re.captures_iter(&ln).map(|captures: regex::Captures| // iterate over all Matches, which may have multiple capture groups each
+        /*mapped_geneids.extend(
+            (fasta_re.captures_iter(&ln).map(|captures: regex::Captures| // iterate over all Matches, which may have multiple capture groups each
                 captures.get(1) // of this match, take the first capture group
                 .expect("fasta regex match should have had first capture group")
                 .as_str().to_owned() // make Owned copy of capture-group contents
             )
-        );
+        );*/
+        /*for cap in fasta_re.captures_iter(&ln) {
+           if let Some(first_cap) = cap.get(1) {
+               mapped_geneids.insert(String::from(first_cap.as_str()), 0);
+           }
+        }*/
     }
 
     // now to the sam parser
@@ -77,7 +84,7 @@ fn main() {
 
     let mut count_total = 0;
     
-    let mut mapped_geneids : HashMap<String, i32> = HashMap::new();
+
     
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
@@ -134,24 +141,21 @@ fn main() {
             // now apply input mapping regex
             if(mapping_match_re.is_match(&match_string)) {
                  let mut x = al_arr[2].to_owned().clone();
-                 let mut val = 0;
-                 if ! mapped_geneids.contains_key(&x) {
-                    val = 1;
+                 
+                 match mapped_geneids.get_mut(&x) {
+                      Some(v) => *v += 1,
+                      None => panic!("a thing that should not be...we cannot proceed if the gene id is not in the reference fasta file: {}", x)
                  }
-                 else {
-                    val = mapped_geneids.get(&x).expect("cannot get element x") + 1;
-                 }
-                 mapped_geneids.insert(x, val);
             }
         }
 
         // --------- end of basic algorithm ---
     }
     println!("sgRNA\tCount");
-    for (k,v) in &mapped_geneids {
+    for (k,v) in &mapped_geneids.iter() {
        println!("{}\t{}", k.replace("\"",""), v);
     }
 
-    println!("Total\tMatched");
-    println!("{}\t{}", count_total, count_total);
+    //println!("Total\tMatched");
+    //println!("{}\t{}", count_total, count_total);
 }
