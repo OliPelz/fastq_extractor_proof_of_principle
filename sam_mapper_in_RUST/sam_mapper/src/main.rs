@@ -100,7 +100,7 @@ fn main() {
         // now split
         let al_arr: Vec<&str> = next_line.trim_right().split("\t").collect();
         //println!("{}", al_arr[2]);
-        let gene_id = al_arr[2].split("_").nth(0).unwrap();
+        //let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
         let mut found_mismatch = false;
         // the sam file format is so BAD that a certain position of any optional field cannot be
@@ -117,7 +117,8 @@ fn main() {
         }
 
         // do some prechecks to safe computation time...skip the obvious
-        let skip = (!mismatch_in_patt && found_mismatch || mismatch_in_patt && !found_mismatch);
+        let skip = !mismatch_in_patt && found_mismatch ||
+                    mismatch_in_patt && !found_mismatch;
         if !skip {
             // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
             // MMMMMMMMMMIDDDDD, 20M1D =
@@ -125,26 +126,25 @@ fn main() {
             for caps in match_string_re.captures_iter(&al_arr[5]) {
                 //println!("{}", &caps[1]);
                 let until_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
-                for char_pos in 0..until_pos {
+                for _ in 0..until_pos {
                     match_string.push_str(&caps[2]);
                 }
             }
             // now introduce mismatches int the string if needed
-            if (found_mismatch) {
+            if found_mismatch {
                 for pos in mm_positions {
                     // TODO: next line is not compiling
                     match_string.insert_str(pos, "X");
                 }
             }
             // now apply input mapping regex
-            if (mapping_match_re.is_match(&match_string)) {
-                let mut x = al_arr[2].to_owned().clone();
-                let mut val = 0;
-                if !mapped_geneids.contains_key(&x) {
-                    val = 1;
+            if mapping_match_re.is_match(&match_string) {
+                let x = al_arr[2].to_owned().clone();
+                let val = if !mapped_geneids.contains_key(&x) {
+                    1
                 } else {
-                    val = mapped_geneids.get(&x).expect("cannot get element x") + 1;
-                }
+                    mapped_geneids.get(&x).expect("cannot get element x") + 1
+                };
                 mapped_geneids.insert(x, val);
             }
         }
