@@ -42,6 +42,7 @@ fn main() {
         println!("{}\t{}", k.replace("\"", ""), v);
     }
 
+    // FIXME: two times "count_total"?
     println!("Total\tMatched");
     println!("{}\t{}", count_total, count_total);
 }
