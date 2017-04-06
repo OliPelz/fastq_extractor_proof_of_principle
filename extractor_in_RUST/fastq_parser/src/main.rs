@@ -22,7 +22,7 @@ fn main() {
 
     //let mut fq_header: &str = "";
     let mut fq_header = String::from("");
-    let mut fq_seq = String::from("");
+    let mut fq_seq = String::with_capacity(200);
     let mut fq_start = 0;
     let mut fq_stop = 0;
     let mut strand = String::from("");
@@ -52,9 +52,9 @@ fn main() {
                 Some(mat) => {
                     found_hit = true;
                     //seq = mat.as_str();
-                    fq_seq = l.clone();
                     fq_start = mat.start() + 3;
                     fq_stop = mat.end() - 1;
+                    fq_seq.clone_from(&l);
                     count_extracted += 1;
                 }
             };
