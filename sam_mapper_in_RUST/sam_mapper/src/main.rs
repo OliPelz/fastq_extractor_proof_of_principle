@@ -28,26 +28,10 @@ fn main() {
     let mapping_match_re =
         Regex::new(&mapping_match_pattern).expect("programmer error in mapping match regexp");
 
+    let mismatch_in_patt = mapping_match_pattern.contains('x') || mapping_match_pattern.contains('X');
+
     // first parse the fasta file
-    let mut geneids = HashSet::<String>::new();
-
-    let mismatch_in_patt = mapping_match_pattern.contains('x') ||
-                           mapping_match_pattern.contains('X');
-
-    let fasta_file =
-        BufReader::new(File::open(fasta_file_arg).expect("Problem opening fastq file"));
-
-    for line in fasta_file.lines() {
-        let ln = line.expect("programmer error in reading fasta line by line");
-
-        geneids.extend(
-            fasta_re.captures_iter(&ln).map(|captures: regex::Captures| // iterate over all Matches, which may have multiple capture groups each
-                                                captures.get(1) // of this match, take the first capture group
-                                                    .expect("fasta regex match should have had first capture group")
-                                                    .as_str().to_owned() // make Owned copy of capture-group contents
-            )
-        );
-    }
+    let geneids = process_fasta(&fasta_file_arg, &fasta_re);
 
     // now to the sam parser
     // TODO: implement as XVS stream parser
@@ -163,4 +147,25 @@ geneid_pattern: &mut String, logfile_out: &mut String) {
                                                   "Logfile filename");
 
     cli_parser.parse_args_or_exit();
+}
+
+fn process_fasta(fasta_file: &str, fasta_re: &Regex) -> HashSet<String> {
+    let mut geneids = HashSet::<String>::new();
+
+    let fasta_file =
+        BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
+
+    for line in fasta_file.lines() {
+        let ln = line.expect("programmer error in reading fasta line by line");
+
+        geneids.extend(
+            fasta_re.captures_iter(&ln).map(|captures: regex::Captures| // iterate over all Matches, which may have multiple capture groups each
+                                                captures.get(1) // of this match, take the first capture group
+                                                    .expect("fasta regex match should have had first capture group")
+                                                    .as_str().to_owned() // make Owned copy of capture-group contents
+            )
+        );
+    }
+
+    geneids
 }
