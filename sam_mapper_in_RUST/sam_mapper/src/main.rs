@@ -152,9 +152,13 @@ fn main() {
         // --------- end of basic algorithm ---
     }
     println!("sgRNA\tCount");
-    for (k,v) in &mapped_geneids.iter() {
-       println!("{}\t{}", k.replace("\"",""), v);
+    let gene_refs: Vec<String> = mapped_geneids.iter().collect().sort();
+    for gene_ref in gene_refs {
+         println!("{}\tx", gene_ref.replace("\"",""));
     }
+/*    for (k,v) in &mapped_geneids.iter() {
+       println!("{}\t{}", k.replace("\"",""), v);
+    }*/
 
     //println!("Total\tMatched");
     //println!("{}\t{}", count_total, count_total);
