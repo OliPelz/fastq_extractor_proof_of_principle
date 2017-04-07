@@ -24,30 +24,32 @@ fn main() {
                &mut geneid_pattern,
                &mut logfile_out);
 
-    let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
+    //let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
+    let fasta_re = Regex::new(r"^>(.+)")
             .expect("programmer error in accession regex");
 
     let mismatch_in_pattern = mapping_match_pattern.contains('x') ||
                               mapping_match_pattern.contains('X');
 
-    let mut ref_geneids = BTreeMap::<String, u32>::new();
+    let mut ref_libIds = BTreeMap::<String, u32>::new();
+    //let mut geneIds = TreeMap::<String, u32>::new();
 
     // first parse the reference genome from the fasta file
-    process_fasta(&fasta_file_arg, &fasta_re, &mut ref_geneids);
+    process_fasta(&fasta_file_arg, &fasta_re, &mut ref_libIds);
 
     // now parse the samfile
     //let (mapped_geneids, count_total) =
     let count_total =
-        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut ref_geneids);
+        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut ref_libIds);
 
     println!("sgRNA\tCount");
-    for (k, v) in &ref_geneids {
+    for (k, v) in &ref_libIds {
         println!("{}\t{}", k.replace("\"", ""), v);
     }
 
     // FIXME: two times "count_total"?
-    println!("Total\tMatched");
-    println!("{}\t{}", count_total, count_total);
+    //println!("Total\tMatched");
+    //println!("{}\t{}", count_total, count_total);
 }
 
 
@@ -80,7 +82,7 @@ fn parse_args(fasta_file_arg: &mut String,
 }
 
 
-fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_geneids: &mut BTreeMap<String, u32>) {
+fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_libIds: &mut BTreeMap<String, u32>) {
 
 
     let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
@@ -88,7 +90,7 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_geneids: &mut BTreeMap<
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        ref_geneids.extend(
+        ref_libIds.extend(
             fasta_re.captures_iter(&ln)
                 // iterate over all Matches, which may have multiple capture groups each
                 .map(|captures: regex::Captures| {
@@ -106,7 +108,7 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_geneids: &mut BTreeMap<
 fn process_sam(sam_file: &str,
                mismatch_in_pattern: bool,
                mapping_match_pattern: &str,
-               ref_geneids: &mut BTreeMap<String, u32>)
+               ref_libIds: &mut BTreeMap<String, u32>)
                -> u32 {
 
 //-> (HashMap<String, i32>, u32) {
@@ -178,11 +180,10 @@ fn process_sam(sam_file: &str,
             // now apply input mapping regex
             if mapping_match_re.is_match(&match_string) {
                 let x = al_arr[2].to_owned().clone();
-                //ref_geneids.get(&x).ok_or("illegal gene id encountered") += 1;
-                match ref_geneids.get_mut(&x) {
+                //ref_libIds.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
+                match ref_libIds.get_mut(&x) {
                     Some(v) => *v += 1,
-                    None => println!("fail!")
-                    //None => "illegal gene id encountered: "
+                    None => println!("illegal gene id encountered '{}'", x)
                 }
             }
         }
