@@ -1,3 +1,5 @@
+#![feature(alloc_system)]
+extern crate alloc_system;
 extern crate regex;
 
 use regex::Regex;
@@ -20,9 +22,8 @@ fn main() {
     let fastq_file = &args[1];
     let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
 
-    //let mut fq_header: &str = "";
     let mut fq_header = String::from("");
-    let mut fq_seq = String::from("");
+    let mut fq_seq = String::with_capacity(200);
     let mut fq_start = 0;
     let mut fq_stop = 0;
     let mut strand = String::from("");
@@ -52,9 +53,9 @@ fn main() {
                 Some(mat) => {
                     found_hit = true;
                     //seq = mat.as_str();
-                    fq_seq = l.clone();
                     fq_start = mat.start() + 3;
                     fq_stop = mat.end() - 1;
+                    fq_seq.clone_from(&l);
                     count_extracted += 1;
                 }
             };
@@ -65,8 +66,10 @@ fn main() {
             // fourth/last line of record: store everything
             out_file.write_all((&fq_header).as_bytes()).unwrap();
             out_file.write_all(b"\n").unwrap();
+
             out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
             out_file.write_all(b"\n").unwrap();
+
             out_file.write_all((&strand).as_bytes()).unwrap();
             out_file.write_all(b"\n").unwrap();
 
@@ -76,8 +79,7 @@ fn main() {
     }
 
     println!("Fastq data extracted successfully");
-    println!("Total Reads in this file:\t {}", count_total);
-    println!("Extracted Reads in this file with the matching pattern:\t {}",
-             count_extracted);
-    println!("The provided pattern worked in:\t {:.2}%",(count_extracted as f32 / count_total as f32 * 100.0) );
+    println!("Total Reads in this file:\t{}", count_total);
+    println!("Extracted Reads in this file with the matching pattern:\t{}", count_extracted);
+    println!("The provided pattern matched:\t{:.2}%", (count_extracted as f32 / count_total as f32 * 100.0) );
 }
