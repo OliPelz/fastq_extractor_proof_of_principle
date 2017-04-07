@@ -1,5 +1,5 @@
-#![feature(alloc_system)]
-extern crate alloc_system;
+// #![feature(alloc_system)]
+// extern crate alloc_system;
 extern crate regex;
 extern crate argparse;
 
@@ -30,15 +30,18 @@ fn main() {
     let mismatch_in_pattern = mapping_match_pattern.contains('x') ||
                               mapping_match_pattern.contains('X');
 
+    let mut ref_geneids = BTreeMap::<String, u32>::new();
+
     // first parse the reference genome from the fasta file
-    let reference_geneids = process_fasta(&fasta_file_arg, &fasta_re);
+    process_fasta(&fasta_file_arg, &fasta_re, &mut ref_geneids);
 
     // now parse the samfile
-    let (mapped_geneids, count_total) =
-        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern);
+    //let (mapped_geneids, count_total) =
+    let count_total =
+        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut ref_geneids);
 
     println!("sgRNA\tCount");
-    for (k, v) in &mapped_geneids {
+    for (k, v) in &ref_geneids {
         println!("{}\t{}", k.replace("\"", ""), v);
     }
 
@@ -77,36 +80,36 @@ fn parse_args(fasta_file_arg: &mut String,
 }
 
 
-fn process_fasta(fasta_file: &str, fasta_re: &Regex) -> BTreeMap<String> {
-    let mut geneids = BTreeMap::<String, u32>::new();
+fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_geneids: &mut BTreeMap<String, u32>) {
+
 
     let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
 
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        geneids.extend(
+        ref_geneids.extend(
             fasta_re.captures_iter(&ln)
                 // iterate over all Matches, which may have multiple capture groups each
                 .map(|captures: regex::Captures| {
                     let key = captures.get(1) // of this match, take the first capture group
                         .expect("fasta regex match should have had first capture group")
                         .as_str().to_owned(); // make Owned copy of capture-group contents
-
                     (key, 0)
                 }
-            )
+                )
         );
     }
-
-    geneids
 }
 
 
 fn process_sam(sam_file: &str,
                mismatch_in_pattern: bool,
-               mapping_match_pattern: &str)
-               -> (HashMap<String, i32>, u32) {
+               mapping_match_pattern: &str,
+               ref_geneids: &mut BTreeMap<String, u32>)
+               -> u32 {
+
+//-> (HashMap<String, i32>, u32) {
 
     // our buffer for the sam parser
     let sam_file = BufReader::new(File::open(sam_file).expect("Problem opening fastq file"))
@@ -119,7 +122,6 @@ fn process_sam(sam_file: &str,
         Regex::new(mapping_match_pattern).expect("programmer error in mapping match regexp");
 
     let mut count_total = 0;
-    let mut mapped_geneids: HashMap<String, i32> = HashMap::new();
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
 
@@ -176,12 +178,18 @@ fn process_sam(sam_file: &str,
             // now apply input mapping regex
             if mapping_match_re.is_match(&match_string) {
                 let x = al_arr[2].to_owned().clone();
-                *mapped_geneids.get(x).ok_or("illegal gene id encountered")
+                //ref_geneids.get(&x).ok_or("illegal gene id encountered") += 1;
+                match ref_geneids.get_mut(&x) {
+                    Some(v) => *v += 1,
+                    None => println!("fail!")
+                    //None => "illegal gene id encountered: "
+                }
             }
         }
 
         // --------- end of basic algorithm ---
     }
 
-    (mapped_geneids, count_total)
+   // (mapped_geneids, count_total)
+    count_total
 }
