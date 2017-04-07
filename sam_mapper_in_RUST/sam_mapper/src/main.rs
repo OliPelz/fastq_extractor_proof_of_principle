@@ -138,6 +138,12 @@ fn process_sam(sam_file: &str,
         // ----------the basic algorithm starts here ---
         // now split
         let al_arr: Vec<&str> = next_line.trim_right().split("\t").collect();
+        //only count the mapped read if 2nd field, the FLAG, indicates an alignment that is neither rev-complementary, nor unmapped, nor a mutliple alignment (FLAG = 0)
+
+        if(al_arr[1] != "0") {
+            continue;
+        }
+
         //println!("{}", al_arr[2]);
         //let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
