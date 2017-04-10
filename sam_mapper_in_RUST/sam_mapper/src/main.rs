@@ -10,6 +10,14 @@ use std::collections::HashSet;
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
 
+// print $seqgene "Gene\tCount\tdesigns-present\n";
+// print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
+// open ($stats, ">", $logfile) or die $!; 
+// print $stats "Total\tMatched\n";
+// print $stats $counttotal . "\t" . $countmatched . "\n";
+// close($stats);
+
+
 fn main() {
     // buffers to hold parsed arguments
     let mut fasta_file_arg = String::new();
