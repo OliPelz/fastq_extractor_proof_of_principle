@@ -41,6 +41,7 @@ fn main() {
 
     let mut gene_matches = BTreeMap::<String, u32>::new();
     let mut ref_libIds = BTreeMap::<String, u32>::new();
+    let mut targets_matched = BTreeMap::<String, u32>::new();
     //let mut geneIds = TreeMap::<String, u32>::new();
 
     // first parse the reference genome from the fasta file
@@ -56,12 +57,19 @@ fn main() {
     let mut design_out_file =
         BufWriter::new(File::create(format!("{}-designs.txt", out_base_name)).expect("problem opening output file"));
 
+
     design_out_file.write_all(b"sgRNA\tCount\n").unwrap();
+//    let mut uniqLibIds
     for (k, v) in &ref_libIds {
         design_out_file.write_all(k.replace("\"", "").as_bytes()).unwrap();
         design_out_file.write_all(b"\t").unwrap();
         design_out_file.write_all(v.to_string().as_bytes()).unwrap();
         design_out_file.write_all(b"\n").unwrap();
+
+        if(*v > 0) {
+            let gid = k.split("_").nth(0).unwrap().to_string();
+            *targets_matched.entry(gid).or_insert(0) += 1;
+        }
         //println!("{}\t{}", k.replace("\"", ""), v);
     }
 
@@ -72,8 +80,13 @@ fn main() {
         genes_out_file.write_all(k.as_bytes()).unwrap();
         genes_out_file.write_all(b"\t").unwrap();
         genes_out_file.write_all(v.to_string().as_bytes()).unwrap();
+        genes_out_file.write_all(b"\t").unwrap();
+        genes_out_file.write_all(targets_matched.get(k).unwrap().to_string().as_bytes()).unwrap();
         genes_out_file.write_all(b"\n").unwrap();
+
     }
+
+
 //   foreach $target ( sort keys %reads) {
 // print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
 
@@ -233,17 +246,14 @@ fn process_sam(sam_file: &str,
             if mapping_match_re.is_match(&match_string) {
                 count_matched += 1;
 
-                let geneid = al_arr[2].split("_").nth(0).unwrap();
-                match gene_matches.get_mut(geneid) {
+                match gene_matches.get_mut(al_arr[2].split("_").nth(0).unwrap()) {
                     Some(v) => *v += 1,
-                    None => println!("illegal gene id encountered '{}'", geneid)
+                    None => println!("illegal gene id encountered '{}'", &al_arr[2].split("_").nth(0).unwrap())
                 }
-
-                let x = al_arr[2].to_owned().clone();
-                //ref_libIds.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
-                match ref_libIds.get_mut(&x) {
+               //ref_libIds.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
+                match ref_libIds.get_mut(&al_arr[2].to_owned().clone()) {
                     Some(v) => *v += 1,
-                    None => println!("illegal reference lib id encountered '{}'", x)
+                    None => println!("illegal reference lib id encountered '{}'", &al_arr[2].split("_").nth(0).unwrap())
                 }
             }
         }
