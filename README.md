@@ -61,9 +61,10 @@ sys	0m0.192s
 RUST
 
 ```bash
-sam_mapper -f ./data/pilotscreen.fasta -s ./data/TRAIL-Replicate1_extracted.sam
+time sam_mapper -f ./data/pilotscreen.fasta -s ./data/TRAIL-Replicate1_extracted.sam
 ```
 
+output
 ```
 real	0m7.590s
 user	0m7.461s
