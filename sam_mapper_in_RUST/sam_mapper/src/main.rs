@@ -39,21 +39,54 @@ fn main() {
     let mismatch_in_pattern = mapping_match_pattern.contains('x') ||
                               mapping_match_pattern.contains('X');
 
+    let mut gene_matches = BTreeMap::<String, u32>::new();
     let mut ref_libIds = BTreeMap::<String, u32>::new();
     //let mut geneIds = TreeMap::<String, u32>::new();
 
     // first parse the reference genome from the fasta file
-    process_fasta(&fasta_file_arg, &fasta_re, &mut ref_libIds);
+    process_fasta(&fasta_file_arg, &fasta_re, geneid_pattern, &mut gene_matches, &mut ref_libIds);
 
     // now parse the samfile
     //let (mapped_geneids, count_total) =
-    let count_total =
-        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut ref_libIds);
+    let (count_total, count_matched) =
+        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_libIds);
 
-    println!("sgRNA\tCount");
+    let out_base_name = sam_file_arg.replace(".sam", "");
+
+    let mut design_out_file =
+        BufWriter::new(File::create(format!("{}-designs.txt", out_base_name)).expect("problem opening output file"));
+
+    design_out_file.write_all(b"sgRNA\tCount\n").unwrap();
     for (k, v) in &ref_libIds {
-        println!("{}\t{}", k.replace("\"", ""), v);
+        design_out_file.write_all(k.replace("\"", "").as_bytes()).unwrap();
+        design_out_file.write_all(b"\t").unwrap();
+        design_out_file.write_all(v.to_string().as_bytes()).unwrap();
+        design_out_file.write_all(b"\n").unwrap();
+        //println!("{}\t{}", k.replace("\"", ""), v);
     }
+
+    let mut genes_out_file =
+        BufWriter::new(File::create(format!("{}-genes.txt", out_base_name)).expect("problem opening output file"));
+    genes_out_file.write_all(b"Gene\tCount\tdesigns-present\n").unwrap();
+    for (k, v) in &gene_matches {
+        genes_out_file.write_all(k.as_bytes()).unwrap();
+        genes_out_file.write_all(b"\t").unwrap();
+        genes_out_file.write_all(v.to_string().as_bytes()).unwrap();
+        genes_out_file.write_all(b"\n").unwrap();
+    }
+//   foreach $target ( sort keys %reads) {
+// print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
+
+    // write log file
+    let mut log_file =
+        BufWriter::new(File::create(format!("{}_log.txt", fasta_file_arg)).expect("problem opening output file"));
+    log_file.write_all(b"Total\tMatched\n").unwrap();
+    log_file.write_all(b"\n").unwrap();
+    log_file.write_all(count_total.to_string().as_bytes()).unwrap();
+    log_file.write_all(b"\t").unwrap();
+    log_file.write_all(count_matched.to_string().as_bytes()).unwrap();
+    log_file.write_all(b"\n").unwrap();
+
 
     // FIXME: two times "count_total"?
     //println!("Total\tMatched");
@@ -90,7 +123,7 @@ fn parse_args(fasta_file_arg: &mut String,
 }
 
 
-fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_libIds: &mut BTreeMap<String, u32>) {
+fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_libIds: &mut BTreeMap<String, u32>) {
 
 
     let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
@@ -105,6 +138,8 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_libIds: &mut BTreeMap<S
                     let key = captures.get(1) // of this match, take the first capture group
                         .expect("fasta regex match should have had first capture group")
                         .as_str().to_owned(); // make Owned copy of capture-group contents
+                    // add to gene_matches as well
+                    gene_matches.insert(key.split("_").nth(0).unwrap().to_string(),  0);
                     (key, 0)
                 }
                 )
@@ -116,8 +151,9 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, ref_libIds: &mut BTreeMap<S
 fn process_sam(sam_file: &str,
                mismatch_in_pattern: bool,
                mapping_match_pattern: &str,
+               gene_matches : &mut BTreeMap<String, u32>,
                ref_libIds: &mut BTreeMap<String, u32>)
-               -> u32 {
+               -> (u32,u32) {
 
 //-> (HashMap<String, i32>, u32) {
 
@@ -131,7 +167,8 @@ fn process_sam(sam_file: &str,
     let mapping_match_re =
         Regex::new(mapping_match_pattern).expect("programmer error in mapping match regexp");
 
-    let mut count_total = 0;
+    let mut count_total : u32 = 0;
+    let mut count_matched : u32 = 0;
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
 
@@ -140,8 +177,6 @@ fn process_sam(sam_file: &str,
         if next_line.starts_with('@') {
             continue;
         }
-
-        count_total += 1;
 
         // ----------the basic algorithm starts here ---
         // now split
@@ -152,6 +187,7 @@ fn process_sam(sam_file: &str,
             continue;
         }
 
+        count_total += 1;
         //println!("{}", al_arr[2]);
         //let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
@@ -192,12 +228,22 @@ fn process_sam(sam_file: &str,
             }
 
             // now apply input mapping regex
+
+
             if mapping_match_re.is_match(&match_string) {
+                count_matched += 1;
+
+                let geneid = al_arr[2].split("_").nth(0).unwrap();
+                match gene_matches.get_mut(geneid) {
+                    Some(v) => *v += 1,
+                    None => println!("illegal gene id encountered '{}'", geneid)
+                }
+
                 let x = al_arr[2].to_owned().clone();
                 //ref_libIds.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
                 match ref_libIds.get_mut(&x) {
                     Some(v) => *v += 1,
-                    None => println!("illegal gene id encountered '{}'", x)
+                    None => println!("illegal reference lib id encountered '{}'", x)
                 }
             }
         }
@@ -206,5 +252,5 @@ fn process_sam(sam_file: &str,
     }
 
    // (mapped_geneids, count_total)
-    count_total
+    (count_total, count_matched)
 }
