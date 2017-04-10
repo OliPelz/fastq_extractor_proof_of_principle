@@ -5,7 +5,7 @@ all examples are done on Thinkpad T420s Core i7 vPro with 16GB RAM and Evo 850 S
 
 PERL
 ```
-time perl CRISPR-extract.pl "ACC(.{20,21})G" data/TRAIL-Replicate1.fastq no
+time perl CRISPR-extract.pl "ACC(.{20,21})G" ./data/TRAIL-Replicate1.fastq no
 ```
 
 ```bash
@@ -16,7 +16,7 @@ sys	0m0.682s
 
 RUST
 ```bash
-$ time ./extractor_in_RUST/fastq_parser/target/release/fastq_parser /home/olip/Desktop/Oli/data/TRAIL-Replicate1.fastq 
+$ time fastq_parser ./data/TRAIL-Replicate1.fastq 
 ```
 
 output
@@ -28,7 +28,7 @@ sys	0m0.438s
 
 C
 ```bash
-time ./extractor default ../../data/TRAIL-Replicate1.fastq  no
+time ./extractor default ./data/TRAIL-Replicate1.fastq  no
 ```
 
 output
@@ -48,7 +48,7 @@ unbelievable the Rust code did beat the low-level C code, pretty amazing!
 benchmark Perl script (not included in this repo)
 
 ```bash
-time perl CRISPR-mapping.pl data/pilotscreen.fasta data/TRAIL-Replicate1_extracted.sam "M{20,21}$" "_"
+time perl CRISPR-mapping.pl ./data/pilotscreen.fasta ./data/TRAIL-Replicate1_extracted.sam "M{20,21}$" "_"
 ```
 
 result
@@ -58,3 +58,16 @@ real	1m17.280s
 user	1m16.820s
 sys	0m0.192s
 ```
+
+sam mapper in RUST
+
+```bash
+sam_mapper -f ./data/pilotscreen.fasta -s ./data/TRAIL-Replicate1_extracted.sam
+```
+
+```
+real	0m7.590s
+user	0m7.461s
+sys	0m0.111s
+```
+
