@@ -45,13 +45,12 @@ unbelievable the Rust code did beat the low-level C code, pretty amazing!
 # sam_mapper in RUST
 
 
-benchmark Perl script (not included in this repo)
-
+PERL (not included in this repo)
 ```bash
 time perl CRISPR-mapping.pl ./data/pilotscreen.fasta ./data/TRAIL-Replicate1_extracted.sam "M{20,21}$" "_"
 ```
 
-result
+output
 
 ```bash
 real	1m17.280s
@@ -59,7 +58,7 @@ user	1m16.820s
 sys	0m0.192s
 ```
 
-sam mapper in RUST
+RUST
 
 ```bash
 sam_mapper -f ./data/pilotscreen.fasta -s ./data/TRAIL-Replicate1_extracted.sam
