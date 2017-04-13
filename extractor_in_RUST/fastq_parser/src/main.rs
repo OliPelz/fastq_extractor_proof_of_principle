@@ -2,13 +2,14 @@
 //:extern crate alloc_system;
 extern crate regex;
 extern crate clap;
+extern crate bio;
 
 use regex::Regex;
 
 use std::io::{BufReader, BufRead, BufWriter, Write};
 use std::fs::File;
-use std::process;
-use clap::{Arg, App, SubCommand};
+use clap::{Arg, App};
+use bio::alphabets;
 
 
 fn main() {
@@ -16,32 +17,35 @@ fn main() {
                           .version("0.0.1")
                           .author("Oliver P. <oliverpelz@gmail.com>")
                           .about("Fast Fastq extractor")
-                          .arg(Arg::with_name("match pattern")
+                          .arg(Arg::with_name("PATTERN")
                                .short("p")
                                .long("pattern")
-                               .value_name("PATTERN")
+                               .value_name("match_pattern")
                                .help("PERL style regexp to extract sub sequences")
                                .takes_value(true))
-                          .arg(Arg::with_name("fastq input file")
+                          .arg(Arg::with_name("FASTQ")
                                .help("fastq input file to process")
                               .short("f")
                               .long("fastq-file")
-                              .value_name("FASTQ")
+                              .value_name("fastq_input_file")
                               .required(true))
-                          .arg(Arg::with_name("reverse complement")
+                          .arg(Arg::with_name("REVCOMP")
                                .short("c")
                                .long("reverse-complement")
-                              .value_name("REVCOMP")
+                              .value_name("reverse_complement")
                               .help("set to 'yes' if reverse complement, otherwise (default) set to no"))
                           .get_matches();
 
-// define some default arguments for non-required values
+    // define some default arguments for non-required values
     let patt = matches.value_of("PATTERN").unwrap_or("ACC.{20,21}G");
-    let is_reverse = matches.value_of("REVCOMP").unwrap_or("no");
+    let is_reverse_str = matches.value_of("REVCOMP").unwrap_or("no");
+    let mut is_reverse = false;
 
+    if is_reverse_str == "yes" {
+        is_reverse = true;
+    }
 
-    let fastq_file = matches.value_of("FASTQ").unwrap();
-
+    let fastq_file = matches.value_of("FASTQ").expect("cannot get fastq file");
 
     let re = Regex::new(patt).expect("programmer error in accession regex");
     let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
@@ -91,13 +95,20 @@ fn main() {
             out_file.write_all((&fq_header).as_bytes()).unwrap();
             out_file.write_all(b"\n").unwrap();
 
-            out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
+            //out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
+
+            if is_reverse  {
+                out_file.write_all(&alphabets::dna::revcomp(&fq_seq[fq_start..fq_stop].to_owned().into_bytes())).expect("reverse complement fails");
+            }
+            else {
+                out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
+            }
             out_file.write_all(b"\n").unwrap();
 
             out_file.write_all((&strand).as_bytes()).unwrap();
             out_file.write_all(b"\n").unwrap();
-
             out_file.write_all((&l[fq_start..fq_stop]).as_bytes()).unwrap();
+
             out_file.write_all(b"\n").unwrap();
         }
     }
