@@ -1,25 +1,49 @@
-#![feature(alloc_system)]
-extern crate alloc_system;
+//#![feature(alloc_system)]
+//:extern crate alloc_system;
 extern crate regex;
+extern crate clap;
 
 use regex::Regex;
 
 use std::io::{BufReader, BufRead, BufWriter, Write};
 use std::fs::File;
-use std::env;
 use std::process;
+use clap::{Arg, App, SubCommand};
 
 
 fn main() {
-    let re = Regex::new("ACC.{20,21}G").expect("programmer error in accession regex");
+    let matches = App::new("fastq_parser")
+                          .version("0.0.1")
+                          .author("Oliver P. <oliverpelz@gmail.com>")
+                          .about("Fast Fastq extractor")
+                          .arg(Arg::with_name("match pattern")
+                               .short("p")
+                               .long("pattern")
+                               .value_name("PATTERN")
+                               .help("PERL style regexp to extract sub sequences")
+                               .takes_value(true))
+                          .arg(Arg::with_name("fastq input file")
+                               .help("fastq input file to process")
+                              .short("f")
+                              .long("fastq-file")
+                              .value_name("FASTQ")
+                              .required(true))
+                          .arg(Arg::with_name("reverse complement")
+                               .short("c")
+                               .long("reverse-complement")
+                              .value_name("REVCOMP")
+                              .help("set to 'yes' if reverse complement, otherwise (default) set to no"))
+                          .get_matches();
 
-    let args: Vec<String> = env::args().collect();
+// define some default arguments for non-required values
+    let patt = matches.value_of("PATTERN").unwrap_or("ACC.{20,21}G");
+    let is_reverse = matches.value_of("REVCOMP").unwrap_or("no");
 
-    if args.len() < 2 {
-        println!("error, argument missing: a fastq file");
-        process::exit(1);
-    }
-    let fastq_file = &args[1];
+
+    let fastq_file = matches.value_of("FASTQ").unwrap();
+
+
+    let re = Regex::new(patt).expect("programmer error in accession regex");
     let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
 
     let mut fq_header = String::from("");

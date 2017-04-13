@@ -5,4 +5,5 @@ authors = ["olip"]
 
 [dependencies]
 regex = "0.2"
+clap = "2.23.2"
 
