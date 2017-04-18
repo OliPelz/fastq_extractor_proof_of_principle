@@ -6,7 +6,6 @@ extern crate argparse;
 use regex::Regex;
 use std::fs::File;
 use argparse::{ArgumentParser, Store};
-use std::collections::HashSet;
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
 
@@ -40,17 +39,17 @@ fn main() {
                               mapping_match_pattern.contains('X');
 
     let mut gene_matches = BTreeMap::<String, u32>::new();
-    let mut ref_libIds = BTreeMap::<String, u32>::new();
+    let mut ref_lib_ids = BTreeMap::<String, u32>::new();
     let mut targets_matched = BTreeMap::<String, u32>::new();
     //let mut geneIds = TreeMap::<String, u32>::new();
 
     // first parse the reference genome from the fasta file
-    process_fasta(&fasta_file_arg, &fasta_re, geneid_pattern, &mut gene_matches, &mut ref_libIds);
+    process_fasta(&fasta_file_arg, &fasta_re, geneid_pattern, &mut gene_matches, &mut ref_lib_ids);
 
     // now parse the samfile
     //let (mapped_geneids, count_total) =
     let (count_total, count_matched) =
-        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_libIds);
+        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_lib_ids);
 
     let out_base_name = sam_file_arg.replace(".sam", "");
 
@@ -60,13 +59,13 @@ fn main() {
 
     design_out_file.write_all(b"sgRNA\tCount\n").unwrap();
 //    let mut uniqLibIds
-    for (k, v) in &ref_libIds {
+    for (k, v) in &ref_lib_ids {
         design_out_file.write_all(k.replace("\"", "").as_bytes()).unwrap();
         design_out_file.write_all(b"\t").unwrap();
         design_out_file.write_all(v.to_string().as_bytes()).unwrap();
         design_out_file.write_all(b"\n").unwrap();
 
-        if(*v > 0) {
+        if *v > 0 {
             let gid = k.split("_").nth(0).unwrap().to_string();
             *targets_matched.entry(gid).or_insert(0) += 1;
         }
@@ -136,7 +135,7 @@ fn parse_args(fasta_file_arg: &mut String,
 }
 
 
-fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_libIds: &mut BTreeMap<String, u32>) {
+fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_lib_ids: &mut BTreeMap<String, u32>) {
 
 
     let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
@@ -144,7 +143,7 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, ge
     for line in fasta_file.lines() {
         let ln = line.expect("programmer error in reading fasta line by line");
 
-        ref_libIds.extend(
+        ref_lib_ids.extend(
             fasta_re.captures_iter(&ln)
                 // iterate over all Matches, which may have multiple capture groups each
                 .map(|captures: regex::Captures| {
@@ -152,7 +151,7 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, ge
                         .expect("fasta regex match should have had first capture group")
                         .as_str().to_owned(); // make Owned copy of capture-group contents
                     // add to gene_matches as well
-                    gene_matches.insert(key.split("_").nth(0).unwrap().to_string(),  0);
+                    gene_matches.insert(key.split(&geneid_pattern).nth(0).unwrap().to_string(),  0);
                     (key, 0)
                 }
                 )
@@ -165,7 +164,7 @@ fn process_sam(sam_file: &str,
                mismatch_in_pattern: bool,
                mapping_match_pattern: &str,
                gene_matches : &mut BTreeMap<String, u32>,
-               ref_libIds: &mut BTreeMap<String, u32>)
+               ref_lib_ids: &mut BTreeMap<String, u32>)
                -> (u32,u32) {
 
 //-> (HashMap<String, i32>, u32) {
@@ -196,7 +195,7 @@ fn process_sam(sam_file: &str,
         let al_arr: Vec<&str> = next_line.trim_right().split("\t").collect();
         //only count the mapped read if 2nd field, the FLAG, indicates an alignment that is neither rev-complementary, nor unmapped, nor a mutliple alignment (FLAG = 0)
 
-        if(al_arr[1] != "0") {
+        if al_arr[1] != "0" {
             continue;
         }
 
@@ -250,8 +249,8 @@ fn process_sam(sam_file: &str,
                     Some(v) => *v += 1,
                     None => println!("illegal gene id encountered '{}'", &al_arr[2].split("_").nth(0).unwrap())
                 }
-               //ref_libIds.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
-                match ref_libIds.get_mut(&al_arr[2].to_owned().clone()) {
+               //ref_lib_ids.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
+                match ref_lib_ids.get_mut(&al_arr[2].to_owned().clone()) {
                     Some(v) => *v += 1,
                     None => println!("illegal reference lib id encountered '{}'", &al_arr[2].split("_").nth(0).unwrap())
                 }
