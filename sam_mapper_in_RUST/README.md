@@ -20,3 +20,9 @@ optional arguments:
                         GeneId pattern to parse, e.g. '_'
   -l,--logfile LOGFILE  Logfile filename
 ```
+
+for example
+
+```bash
+./sam_mapper -f pilotscreen.fasta -s play_it_again.sam
+```

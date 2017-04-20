@@ -19,5 +19,5 @@ OPTIONS:
 for example
 
 ```bash
-fastq_parser -f /home/olip/Schreibtisch/Oli/data/TRAIL-Replicate1.fastq 
+fastq_parser -f ./TRAIL-Replicate1.fastq 
 ```
