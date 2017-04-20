@@ -1,6 +1,7 @@
 ```bash
 fastq_parser --help
 ```
+
 ```bash
 USAGE:
     fastq_parser [OPTIONS] --fastq-file <fastq_input_file>
