@@ -33,19 +33,37 @@ fn main() {
                                .short("c")
                                .long("reverse-complement")
                               .value_name("reverse_complement")
-                              .help("set to 'yes' if reverse complement, otherwise (default) set to no"))
-                          .get_matches();
+                              .help("set to 'yes' if reverse complement, otherwise (default) set to no")
+                              .takes_value(true))
+                          .arg(Arg::with_name("LOGFILE")
+                              .short("l")
+                              .long("log-file")
+                              .value_name("log_file")
+                              .takes_value(true)
+                              .help("file name of the log file to output"))
+
+        .get_matches();
+
+    let fastq_file = matches.value_of("FASTQ").expect("cannot get fastq file");
+    let fastq_base_name = fastq_file.replace(".fastq", "");
+    let fastq_out_file = format!("{}_extracted.fastq", fastq_file);
 
     // define some default arguments for non-required values
     let patt = matches.value_of("PATTERN").unwrap_or("ACC.{20,21}G");
     let is_reverse_str = matches.value_of("REVCOMP").unwrap_or("no");
+
+
+    let log_file_str = format!("{}_log.txt", fastq_base_name);
+    let mut log_out_file =
+        BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
+
     let mut is_reverse = false;
 
     if is_reverse_str == "yes" {
         is_reverse = true;
     }
 
-    let fastq_file = matches.value_of("FASTQ").expect("cannot get fastq file");
+
 
     let re = Regex::new(patt).expect("programmer error in accession regex");
     let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
@@ -62,7 +80,7 @@ fn main() {
     let mut count_extracted = 0;
 
     let mut out_file =
-        BufWriter::new(File::create("/tmp/out").expect("problem opening output file"));
+        BufWriter::new(File::create(fastq_out_file).expect("problem opening output file"));
 
     for (line_number, line) in file.lines().enumerate() {
         let l = line.expect("programmer error: no line to unwrap");
@@ -112,6 +130,12 @@ fn main() {
             out_file.write_all(b"\n").unwrap();
         }
     }
+    log_out_file.write_all(b"Total\tExtracted\n").unwrap();
+    log_out_file.write_all(b"\n").unwrap();
+    log_out_file.write_all(count_total.to_string().as_bytes()).unwrap();
+    log_out_file.write_all(b"\t").unwrap();
+    log_out_file.write_all(count_extracted.to_string().as_bytes()).unwrap();
+    log_out_file.write_all(b"\n").unwrap();
 
     println!("Fastq data extracted successfully");
     println!("Total Reads in this file:\t{}", count_total);
