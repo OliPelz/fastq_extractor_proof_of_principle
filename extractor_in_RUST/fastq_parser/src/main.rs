@@ -46,7 +46,7 @@ fn main() {
 
     let fastq_file = matches.value_of("FASTQ").expect("cannot get fastq file");
     let fastq_base_name = fastq_file.replace(".fastq", "");
-    let fastq_out_file = format!("{}_extracted.fastq", fastq_file);
+    let fastq_out_file = format!("{}_extracted.fastq", fastq_base_name);
 
     // define some default arguments for non-required values
     let patt = matches.value_of("PATTERN").unwrap_or("ACC.{20,21}G");
