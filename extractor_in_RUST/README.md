@@ -1,6 +1,7 @@
 ```bash
 fastq_parser --help
 ```
+
 ```bash
 USAGE:
     fastq_parser [OPTIONS] --fastq-file <fastq_input_file>
@@ -18,5 +19,5 @@ OPTIONS:
 for example
 
 ```bash
-fastq_parser -f /home/olip/Schreibtisch/Oli/data/TRAIL-Replicate1.fastq 
+fastq_parser -f ./TRAIL-Replicate1.fastq 
 ```
