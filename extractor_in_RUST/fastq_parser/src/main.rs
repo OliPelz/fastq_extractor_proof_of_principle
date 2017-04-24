@@ -49,7 +49,7 @@ fn main() {
     let fastq_out_file = format!("{}_extracted.fastq", fastq_base_name);
 
     // define some default arguments for non-required values
-    let patt = matches.value_of("PATTERN").unwrap_or("ACC.{20,21}G");
+    let patt = matches.value_of("PATTERN").unwrap_or(r"ACC(.{20,21})G");
     let is_reverse_str = matches.value_of("REVCOMP").unwrap_or("no");
 
 
@@ -94,17 +94,41 @@ fn main() {
             count_total += 1;
         } else if n == 1 {
             // second line of record
-            match re.find(&l) {
+            match re.captures(&l).as_mut() {
+                None => {},
+                Some(caps) => {
+                    let mat = caps.get(1).expect("cannot extract");
+                    fq_start = mat.start();
+                    fq_stop = mat.end();
+                    fq_seq.clone_from(&l);
+
+                    count_extracted += 1;
+                    found_hit = true;
+                }
+            }
+            /*for caps in re.captures_iter(&l) {
+                let mat = caps.get(1).expect("cannot extract");
+                fq_start = mat.start();
+                fq_stop = mat.end();
+                fq_seq.clone_from(&l);
+
+                count_extracted += 1;
+                found_hit = true;
+            }*/
+
+
+
+            /*match re.find(&l) {
                 None => continue,
                 Some(mat) => {
                     found_hit = true;
                     //seq = mat.as_str();
-                    fq_start = mat.start() + 3;
-                    fq_stop = mat.end() - 1;
+                    fq_start = mat.start();
+                    fq_stop = mat.end();
                     fq_seq.clone_from(&l);
                     count_extracted += 1;
                 }
-            };
+            };*/
         } else if n == 2 && found_hit {
             // third line of record: strand
             strand = l
@@ -126,7 +150,6 @@ fn main() {
             out_file.write_all((&strand).as_bytes()).unwrap();
             out_file.write_all(b"\n").unwrap();
             out_file.write_all((&l[fq_start..fq_stop]).as_bytes()).unwrap();
-
             out_file.write_all(b"\n").unwrap();
         }
     }
