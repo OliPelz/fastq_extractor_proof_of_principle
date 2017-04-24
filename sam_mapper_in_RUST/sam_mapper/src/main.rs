@@ -124,7 +124,6 @@ fn main() {
     let mut log_file =
         BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
     log_file.write_all(b"Total\tMatched\n").unwrap();
-    log_file.write_all(b"\n").unwrap();
     log_file.write_all(count_total.to_string().as_bytes()).unwrap();
     log_file.write_all(b"\t").unwrap();
     log_file.write_all(count_matched.to_string().as_bytes()).unwrap();
