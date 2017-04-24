@@ -97,13 +97,17 @@ fn main() {
             match re.captures(&l).as_mut() {
                 None => {},
                 Some(caps) => {
-                    let mat = caps.get(1).expect("cannot extract");
-                    fq_start = mat.start();
-                    fq_stop = mat.end();
-                    fq_seq.clone_from(&l);
+                    match caps.get(1).as_mut() {
+                        None => {},
+                        Some(mat) => {
+                           fq_seq  = mat.as_str().to_owned(); 
+                           fq_start = mat.start();
+                           fq_stop = mat.end();
 
-                    count_extracted += 1;
-                    found_hit = true;
+                           count_extracted += 1;
+                           found_hit = true;
+                        }
+                   }
                 }
             }
             /*for caps in re.captures_iter(&l) {
@@ -140,10 +144,10 @@ fn main() {
             //out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
 
             if is_reverse  {
-                out_file.write_all(&alphabets::dna::revcomp(&fq_seq[fq_start..fq_stop].to_owned().into_bytes())).expect("reverse complement fails");
+                out_file.write_all(&alphabets::dna::revcomp(fq_seq.as_bytes())).expect("reverse complement fails");
             }
             else {
-                out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
+                out_file.write_all(fq_seq.as_bytes()).unwrap();
             }
             out_file.write_all(b"\n").unwrap();
 
