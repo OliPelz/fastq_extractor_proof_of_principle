@@ -60,8 +60,8 @@ fn main() {
     let out_base_name = sam_file_arg.replace(".sam", "");
 
     // define some default arguments for non-required values
-    let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or("M{20,21}$");
-    let geneid_pattern = matches.value_of("MATCHPATTERN").unwrap_or("_").to_owned();
+    let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or(r"M{20,21}$");
+    let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").unwrap_or("_").to_owned();
 
 
 
@@ -241,14 +241,14 @@ fn process_sam(sam_file: &str,
             if mapping_match_re.is_match(&match_string) {
                 count_matched += 1;
 
-                match gene_matches.get_mut(al_arr[2].split("_").nth(0).unwrap()) {
+                match gene_matches.get_mut(al_arr[2].split("_").nth(0).expect("gene matches not working")) {
                     Some(v) => *v += 1,
-                    None => println!("illegal gene id encountered '{}'", &al_arr[2].split("_").nth(0).unwrap())
+                    None => println!("illegal gene id encountered '{}'", &al_arr[2].split("_").nth(0).expect("illegal gene id cannot split"))
                 }
                //ref_lib_ids.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
                 match ref_lib_ids.get_mut(&al_arr[2].to_owned().clone()) {
                     Some(v) => *v += 1,
-                    None => println!("illegal reference lib id encountered '{}'", &al_arr[2].split("_").nth(0).unwrap())
+                    None => println!("illegal reference lib id encountered '{}'", &al_arr[2].split("_").nth(0).expect("cannot split ref_lib_ids"))
                 }
             }
         }
