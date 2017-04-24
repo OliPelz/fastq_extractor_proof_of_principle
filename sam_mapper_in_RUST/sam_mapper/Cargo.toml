@@ -5,5 +5,5 @@ authors = ["Oliver Pelz <oliverpelz@gmail.com>"]
 
 [dependencies]
 regex = "0.2"
-argparse = "*"
+clap = "2.23.2"
 # alloc_system = "0.1.1"

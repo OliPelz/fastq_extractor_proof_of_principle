@@ -1,13 +1,14 @@
 // #![feature(alloc_system)]
 // extern crate alloc_system;
 extern crate regex;
-extern crate argparse;
+extern crate clap;
 
 use regex::Regex;
 use std::fs::File;
-use argparse::{ArgumentParser, Store};
+use clap::{Arg, App};
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
+
 
 // print $seqgene "Gene\tCount\tdesigns-present\n";
 // print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
@@ -18,18 +19,51 @@ use std::io::{BufReader, BufRead, BufWriter, Write};
 
 
 fn main() {
-    // buffers to hold parsed arguments
-    let mut fasta_file_arg = String::new();
-    let mut sam_file_arg = String::new();
-    let mut mapping_match_pattern = String::from("M{20,21}$");
-    let mut geneid_pattern = String::from("_");
-    let mut logfile_out = String::from("./log.out");
-// TODO: change argparse to clap as suggested by Jules
-    parse_args(&mut fasta_file_arg,
-               &mut sam_file_arg,
-               &mut mapping_match_pattern,
-               &mut geneid_pattern,
-               &mut logfile_out);
+    let matches = App::new("sam_mapper")
+        .version("0.0.1")
+        .author("Oliver P. <oliverpelz@gmail.com>")
+        .about("SAM File mapper")
+        .arg(Arg::with_name("MATCHPATTERN")
+            .short("m")
+            .long("match-pattern")
+            .value_name("match_pattern")
+            .help("PERL style regexp to match CIGAR strings")
+            .takes_value(true))
+        .arg(Arg::with_name("FASTA")
+            .help("FASTA input file to process")
+            .short("f")
+            .long("fasta-file")
+            .value_name("fasta_input_file")
+            .required(true))
+        .arg(Arg::with_name("SAM")
+            .help("SAM input file to process")
+            .short("s")
+            .long("sam-file")
+            .value_name("sam_input_file")
+            .required(true))
+        .arg(Arg::with_name("GENEIDFSEPERATOR")
+            .short("g")
+            .long("geneid-fs-pattern")
+            .value_name("geneid_fs_pattern")
+            .help("the gene id field seperator pattern, defaults to '_'")
+            .takes_value(true))
+        .arg(Arg::with_name("LOGFILE")
+            .short("l")
+            .long("log-file")
+            .value_name("log_file")
+            .takes_value(true)
+            .help("file name of the log file to output"))
+        .get_matches();
+
+    let fasta_file_arg = matches.value_of("FASTA").expect("cannot get fasta input file");
+    let sam_file_arg = matches.value_of("SAM").expect("cannot get sam input file");
+    let out_base_name = sam_file_arg.replace(".sam", "");
+
+    // define some default arguments for non-required values
+    let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or("M{20,21}$");
+    let geneid_pattern = matches.value_of("MATCHPATTERN").unwrap_or("_").to_owned();
+
+
 
     //let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
     let fasta_re = Regex::new(r"^>(.+)")
@@ -51,7 +85,7 @@ fn main() {
     let (count_total, count_matched) =
         process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_lib_ids);
 
-    let out_base_name = sam_file_arg.replace(".sam", "");
+
 
     let mut design_out_file =
         BufWriter::new(File::create(format!("{}-designs.txt", out_base_name)).expect("problem opening output file"));
@@ -85,13 +119,10 @@ fn main() {
 
     }
 
-
-//   foreach $target ( sort keys %reads) {
-// print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
-
     // write log file
+    let log_file_str = format!("{}_log.txt", out_base_name);
     let mut log_file =
-        BufWriter::new(File::create(format!("{}_log.txt", fasta_file_arg)).expect("problem opening output file"));
+        BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
     log_file.write_all(b"Total\tMatched\n").unwrap();
     log_file.write_all(b"\n").unwrap();
     log_file.write_all(count_total.to_string().as_bytes()).unwrap();
@@ -99,41 +130,7 @@ fn main() {
     log_file.write_all(count_matched.to_string().as_bytes()).unwrap();
     log_file.write_all(b"\n").unwrap();
 
-
-    // FIXME: two times "count_total"?
-    //println!("Total\tMatched");
-    //println!("{}\t{}", count_total, count_total);
 }
-
-
-fn parse_args(fasta_file_arg: &mut String,
-              sam_file_arg: &mut String,
-              mapping_match_pattern: &mut String,
-              geneid_pattern: &mut String,
-              logfile_out: &mut String) {
-    // put the argparsing in its own scope
-    let mut cli_parser = ArgumentParser::new();
-    cli_parser.set_description("mapper for CRISPRanalyzer");
-
-    cli_parser.refer(fasta_file_arg)
-        .add_option(&["-f", "--fasta-file"], Store, "Fasta Library Input File")
-        .required();
-
-    cli_parser.refer(sam_file_arg)
-        .add_option(&["-s", "--sam-file"], Store, "Sam Input file")
-        .required();
-
-    cli_parser.refer(mapping_match_pattern)
-        .add_option(&["-m", "--match-pattern"], Store, "Mapping match pattern e.g. M{20,21}$");
-
-    cli_parser.refer(geneid_pattern)
-        .add_option(&["-g", "--geneid-pattern"], Store, "GeneId pattern to parse, e.g. '_'");
-
-    cli_parser.refer(logfile_out).add_option(&["-l", "--logfile"], Store, "Logfile filename");
-
-    cli_parser.parse_args_or_exit();
-}
-
 
 fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_lib_ids: &mut BTreeMap<String, u32>) {
 

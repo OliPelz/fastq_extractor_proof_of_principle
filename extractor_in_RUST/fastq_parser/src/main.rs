@@ -131,7 +131,6 @@ fn main() {
         }
     }
     log_out_file.write_all(b"Total\tExtracted\n").unwrap();
-    log_out_file.write_all(b"\n").unwrap();
     log_out_file.write_all(count_total.to_string().as_bytes()).unwrap();
     log_out_file.write_all(b"\t").unwrap();
     log_out_file.write_all(count_extracted.to_string().as_bytes()).unwrap();
