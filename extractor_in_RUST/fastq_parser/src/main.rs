@@ -35,8 +35,11 @@ fn main() {
                                .short("c")
                                .long("reverse-complement")
                               .value_name("reverse_complement")
+                              .takes_value(true)
+                              .possible_values(&["yes", "no"])
+                              .default_value("no")
                               .help("set to 'yes' if reverse complement, otherwise (default) set to no")
-                              .takes_value(true))
+                          )
                           .arg(Arg::with_name("LOGFILE")
                               .short("l")
                               .long("log-file")
@@ -52,19 +55,12 @@ fn main() {
 
     // define some default arguments for non-required values
     let patt = matches.value_of("PATTERN").expect("PATTERN should have a default value");
-    let is_reverse_str = matches.value_of("REVCOMP").unwrap_or("no");
+    let is_reverse: bool = matches.value_of("REVCOMP") == Some("yes");
 
 
     let log_file_str = format!("{}_log.txt", fastq_base_name);
     let mut log_out_file =
         BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
-
-    let mut is_reverse = false;
-
-    if is_reverse_str == "yes" {
-        is_reverse = true;
-    }
-
 
 
     let re = Regex::new(patt).expect("programmer error in accession regex");
