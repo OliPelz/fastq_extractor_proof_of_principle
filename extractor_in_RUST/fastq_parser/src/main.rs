@@ -80,7 +80,6 @@ fn main() {
 
     for (line_number, line) in file.lines().enumerate() {
         let l = line.expect("programmer error: no line to unwrap");
-
         let n = line_number % 4; // offset inside fastq record
 
         if n == 0 {
@@ -95,7 +94,7 @@ fn main() {
                     match caps.get(1).as_mut() {
                         None => {},
                         Some(mat) => {
-                           fq_seq  = mat.as_str().to_owned(); 
+                           fq_seq  = mat.as_str().to_owned();
                            fq_start = mat.start();
                            fq_stop = mat.end();
 
@@ -129,6 +128,7 @@ fn main() {
             out_file.write_all(b"\n").unwrap();
         }
     }
+
     log_out_file.write_all(b"Total\tExtracted\n").unwrap();
     log_out_file.write_all(count_total.to_string().as_bytes()).unwrap();
     log_out_file.write_all(b"\t").unwrap();
