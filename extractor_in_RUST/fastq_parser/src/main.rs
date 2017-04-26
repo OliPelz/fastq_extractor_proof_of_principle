@@ -47,22 +47,21 @@ fn main() {
 
         .get_matches();
 
+    // Input and output files
     let fastq_file = matches.value_of("FASTQ").expect("cannot get fastq file");
     let fastq_base_name = fastq_file.replace(".fastq", "");
+    let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
     let fastq_out_file = format!("{}_extracted.fastq", fastq_base_name);
+    let log_file_str = format!("{}_log.txt", fastq_base_name);
+    let mut log_out_file = BufWriter::new(File::create(
+            matches.value_of("LOGFILE").unwrap_or(&log_file_str)
+    ).expect("cannot create out log file"));
 
     // define some default arguments for non-required values
     let patt = matches.value_of("PATTERN").expect("PATTERN should have a default value");
     let is_reverse: bool = matches.value_of("REVCOMP") == Some("yes");
 
-
-    let log_file_str = format!("{}_log.txt", fastq_base_name);
-    let mut log_out_file =
-        BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
-
-
     let re = Regex::new(patt).expect("programmer error in accession regex");
-    let file = BufReader::new(File::open(fastq_file).expect("Problem opening fastq file"));
 
     let mut fq_header = String::from("");
     let mut fq_seq = String::with_capacity(200);
