@@ -22,7 +22,9 @@ fn main() {
                                .long("pattern")
                                .value_name("match_pattern")
                                .help("PERL style regexp to extract sub sequences")
-                               .takes_value(true))
+                               .takes_value(true)
+                               .default_value(r"ACC(.{20,21})G")
+                          )
                           .arg(Arg::with_name("FASTQ")
                                .help("fastq input file to process")
                               .short("f")
@@ -49,7 +51,7 @@ fn main() {
     let fastq_out_file = format!("{}_extracted.fastq", fastq_base_name);
 
     // define some default arguments for non-required values
-    let patt = matches.value_of("PATTERN").unwrap_or(r"ACC(.{20,21})G");
+    let patt = matches.value_of("PATTERN").expect("PATTERN should have a default value");
     let is_reverse_str = matches.value_of("REVCOMP").unwrap_or("no");
 
 
