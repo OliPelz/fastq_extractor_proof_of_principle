@@ -57,11 +57,11 @@ fn main() {
             matches.value_of("LOGFILE").unwrap_or(&log_file_str)
     ).expect("cannot create out log file"));
 
-    // define some default arguments for non-required values
+    // convert non-required args to usable form
     let patt = matches.value_of("PATTERN").expect("PATTERN should have a default value");
+    let re = Regex::new(patt).expect("programmer error in accession regex");
     let is_reverse: bool = matches.value_of("REVCOMP") == Some("yes");
 
-    let re = Regex::new(patt).expect("programmer error in accession regex");
 
     let mut fq_header = String::from("");
     let mut fq_seq = String::with_capacity(200);
