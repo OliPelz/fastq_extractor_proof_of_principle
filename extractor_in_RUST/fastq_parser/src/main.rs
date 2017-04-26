@@ -55,7 +55,10 @@ fn main() {
     let log_file_str = format!("{}_log.txt", fastq_base_name);
     let mut log_out_file = BufWriter::new(File::create(
             matches.value_of("LOGFILE").unwrap_or(&log_file_str)
-    ).expect("cannot create out log file"));
+            ).expect("cannot create out log file"));
+    let mut out_file = BufWriter::new(File::create(
+            fastq_out_file
+            ).expect("problem opening output file"));
 
     // convert non-required args to usable form
     let patt = matches.value_of("PATTERN").expect("PATTERN should have a default value");
@@ -74,8 +77,6 @@ fn main() {
     let mut count_total = 0;
     let mut count_extracted = 0;
 
-    let mut out_file =
-        BufWriter::new(File::create(fastq_out_file).expect("problem opening output file"));
 
     for (line_number, line) in file.lines().enumerate() {
         let l = line.expect("programmer error: no line to unwrap");
