@@ -115,12 +115,12 @@ fn main() {
 
             //out_file.write_all((&fq_seq[fq_start..fq_stop]).as_bytes()).unwrap();
 
-            if is_reverse  {
-                out_file.write_all(&alphabets::dna::revcomp(fq_seq.as_bytes())).expect("reverse complement fails");
-            }
-            else {
-                out_file.write_all(fq_seq.as_bytes()).unwrap();
-            }
+            let normalised_seq = if is_reverse {
+                &alphabets::dna::revcomp(fq_seq.as_bytes())
+            } else {
+                fq_seq.as_bytes()
+            };
+            out_file.write_all(normalised_seq);
             out_file.write_all(b"\n").unwrap();
 
             out_file.write_all((&strand).as_bytes()).unwrap();
