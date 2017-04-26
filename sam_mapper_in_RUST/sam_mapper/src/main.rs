@@ -18,7 +18,9 @@ fn main() {
             .long("match-pattern")
             .value_name("match_pattern")
             .help("PERL style regexp to match CIGAR strings")
-            .takes_value(true))
+            .takes_value(true)
+            .default_value(r"M{20,21}$")
+        )
         .arg(Arg::with_name("FASTA")
             .help("FASTA input file to process")
             .short("f")
@@ -36,7 +38,9 @@ fn main() {
             .long("geneid-fs-pattern")
             .value_name("geneid_fs_pattern")
             .help("the gene id field seperator pattern, defaults to '_'")
-            .takes_value(true))
+            .takes_value(true)
+            .default_value("_")
+        )
         .arg(Arg::with_name("LOGFILE")
             .short("l")
             .long("log-file")
@@ -50,8 +54,8 @@ fn main() {
     let out_base_name = sam_file_arg.replace(".sam", "");
 
     // define some default arguments for non-required values
-    let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or(r"M{20,21}$");
-    let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").unwrap_or("_").to_owned();
+    let mapping_match_pattern = matches.value_of("MATCHPATTERN").expect("MATCHPATTERN should have default value");
+    let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").expect("GENEIDFSEPARATOR should have default value").to_owned();
 
 
     let fasta_re = Regex::new(r"^>(.+)")
