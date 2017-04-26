@@ -1,5 +1,3 @@
-//#![feature(alloc_system)]
-//:extern crate alloc_system;
 extern crate regex;
 extern crate clap;
 extern crate bio;
@@ -107,29 +105,6 @@ fn main() {
                    }
                 }
             }
-            /*for caps in re.captures_iter(&l) {
-                let mat = caps.get(1).expect("cannot extract");
-                fq_start = mat.start();
-                fq_stop = mat.end();
-                fq_seq.clone_from(&l);
-
-                count_extracted += 1;
-                found_hit = true;
-            }*/
-
-
-
-            /*match re.find(&l) {
-                None => continue,
-                Some(mat) => {
-                    found_hit = true;
-                    //seq = mat.as_str();
-                    fq_start = mat.start();
-                    fq_stop = mat.end();
-                    fq_seq.clone_from(&l);
-                    count_extracted += 1;
-                }
-            };*/
         } else if n == 2 && found_hit {
             // third line of record: strand
             strand = l
