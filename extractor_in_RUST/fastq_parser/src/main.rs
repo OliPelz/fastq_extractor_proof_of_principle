@@ -93,7 +93,6 @@ fn main() {
             found_hit = false;
             count_total += 1;
         } else if n == 1 {
-            // second line of record
             match re.captures(&l).as_mut() {
                 None => {},
                 Some(caps) => {
@@ -101,7 +100,6 @@ fn main() {
                     fq_start = mat.start();
                     fq_stop = mat.end();
                     fq_seq.clone_from(&l);
-
                     count_extracted += 1;
                     found_hit = true;
                 }
