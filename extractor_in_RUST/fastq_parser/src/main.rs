@@ -25,7 +25,7 @@ fn main() {
             .help("PERL style regexp to extract sub sequences")
             .takes_value(true))
         .arg(Arg::with_name("FASTQ")
-            .help("fastq input file to process")
+            .help("fastq/fastq.gz input file to process")
             .short("f")
             .long("fastq-file")
             .value_name("fastq_input_file")
@@ -81,6 +81,7 @@ fn main() {
                 match caps.get(1).as_mut() {
                     None => {},
                     Some(mat) => {
+                        out_file.write_all(b"@").unwrap();
                         out_file.write_all((&seq.id).as_bytes()).unwrap();
                         out_file.write_all(b"\n").unwrap();
                         if is_reverse {
