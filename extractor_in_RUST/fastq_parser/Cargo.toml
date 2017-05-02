@@ -7,4 +7,5 @@ authors = ["olip"]
 regex = "0.2"
 clap = "2.23.2"
 bio = "*"
+needletail = "^0.1.0"
 
