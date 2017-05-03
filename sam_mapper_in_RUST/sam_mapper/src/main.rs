@@ -1,5 +1,3 @@
-// #![feature(alloc_system)]
-// extern crate alloc_system;
 extern crate regex;
 extern crate clap;
 
@@ -8,15 +6,6 @@ use std::fs::File;
 use clap::{Arg, App};
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
-
-
-// print $seqgene "Gene\tCount\tdesigns-present\n";
-// print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
-// open ($stats, ">", $logfile) or die $!; 
-// print $stats "Total\tMatched\n";
-// print $stats $counttotal . "\t" . $countmatched . "\n";
-// close($stats);
-
 
 fn main() {
     let matches = App::new("sam_mapper")
@@ -63,9 +52,6 @@ fn main() {
     let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or(r"M{20,21}$");
     let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").unwrap_or("_").to_owned();
 
-
-
-    //let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
     let fasta_re = Regex::new(r"^>(.+)")
             .expect("programmer error in accession regex");
 
@@ -75,24 +61,19 @@ fn main() {
     let mut gene_matches = BTreeMap::<String, u32>::new();
     let mut ref_lib_ids = BTreeMap::<String, u32>::new();
     let mut targets_matched = BTreeMap::<String, u32>::new();
-    //let mut geneIds = TreeMap::<String, u32>::new();
 
     // first parse the reference genome from the fasta file
     process_fasta(&fasta_file_arg, &fasta_re, geneid_pattern, &mut gene_matches, &mut ref_lib_ids);
 
     // now parse the samfile
-    //let (mapped_geneids, count_total) =
     let (count_total, count_matched) =
         process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_lib_ids);
-
-
 
     let mut design_out_file =
         BufWriter::new(File::create(format!("{}-designs.txt", out_base_name)).expect("problem opening output file"));
 
-
     design_out_file.write_all(b"sgRNA\tCount\n").unwrap();
-//    let mut uniqLibIds
+    
     for (k, v) in &ref_lib_ids {
         design_out_file.write_all(k.replace("\"", "").as_bytes()).unwrap();
         design_out_file.write_all(b"\t").unwrap();
@@ -103,7 +84,6 @@ fn main() {
             let gid = k.split("_").nth(0).unwrap().to_string();
             *targets_matched.entry(gid).or_insert(0) += 1;
         }
-        //println!("{}\t{}", k.replace("\"", ""), v);
     }
 
     let mut genes_out_file =
@@ -180,36 +160,68 @@ fn process_sam(sam_file: &str,
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
 
-        // fast forward the sam header to the beginning of the
-        // alignment section - skip the header starting with @
-        if next_line.starts_with('@') {
-            continue;
-        }
-
         // ----------the basic algorithm starts here ---
         // now split
-        let al_arr: Vec<&str> = next_line.trim_right().split("\t").collect();
-        //only count the mapped read if 2nd field, the FLAG, indicates an alignment that is neither rev-complementary, nor unmapped, nor a mutliple alignment (FLAG = 0)
 
-        if al_arr[1] != "0" {
-            continue;
+        let mut flag_byte = false;
+        let mut parse_line = true;
+        let mut split_idx = 0;
+        let mut start_idx = 0;
+        let mut gene_id = "";
+        let mut cigar_str = "";
+        let mut opt_fields = "";
+
+        for (end_idx, &item) in next_line.as_bytes().iter().enumerate() {
+        // fast forward the sam header to the beginning of the
+        // alignment section - skip the header starting with @
+          if end_idx == 0 && item == b'@'{
+             parse_line = false;
+             break;
+          }
+          else if item == b'\t' {
+              split_idx += 1;
+
+              if split_idx == 1 {
+                  flag_byte = true;
+              }
+              else if flag_byte {
+                  if item == b'0' {
+                    parse_line = false;
+                    //save some milisecs
+                    break;
+                  }
+                  flag_byte = false;
+                  continue;
+              }
+              else if split_idx == 2  {
+                 gene_id = &next_line[start_idx..end_idx];
+              }
+              else if split_idx == 5 {
+                 cigar_str = &next_line[start_idx..end_idx];
+              }
+              else if split_idx == 13 {
+                 opt_fields = &next_line[start_idx..];
+              }
+              start_idx = end_idx;
+           }
+        }
+        if !parse_line {
+           continue;
         }
 
         count_total += 1;
-        //println!("{}", al_arr[2]);
-        //let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
         let mut found_mismatch = false;
         // the sam file format is so BAD that a certain position of any optional field cannot be
         // predicted for sure, so we need to parse the whole line for the mismatch string
-        // at least we know that we have to search from the right end to the left because in the
-        // beginning we have mandantory fields (first 11)
+        // at least we know that we dont have to search from the beginning of the line but only
+        // after the first 11 fields, which are the mandantory one and which dont include mismatch
+        // infos ...this will save some milliseconds i guess :)
 
         let mut mm_positions: Vec<usize> = Vec::new();
-        for caps in sam_mismatch_re.captures_iter(&next_line) {
+        for caps in sam_mismatch_re.captures_iter(&opt_fields) {
             let mm_pos: i32 = caps[1].parse().expect("programmer error: cannot parse string to number for iterating");
             mm_positions.push(mm_pos as usize);
-
             found_mismatch = true;
         }
 
@@ -219,7 +231,7 @@ fn process_sam(sam_file: &str,
             // build / expand cigar string, e.g. 20M -> MMMMMMMMMMMMMMMMMMMM, 10M,1I,5D ->
             // MMMMMMMMMMIDDDDD, 20M1D =
             let mut match_string = String::new();
-            for caps in match_string_re.captures_iter(&al_arr[5]) {
+            for caps in match_string_re.captures_iter(&cigar_str) {
                 //println!("{}", &caps[1]);
                 let until_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
                 for _ in 0..until_pos {
@@ -241,14 +253,14 @@ fn process_sam(sam_file: &str,
             if mapping_match_re.is_match(&match_string) {
                 count_matched += 1;
 
-                match gene_matches.get_mut(al_arr[2].split("_").nth(0).expect("gene matches not working")) {
+                match gene_matches.get_mut(gene_id.split("_").nth(0).expect("gene matches not working")) {
                     Some(v) => *v += 1,
-                    None => println!("illegal gene id encountered '{}'", &al_arr[2].split("_").nth(0).expect("illegal gene id cannot split"))
+                    None => println!("illegal gene id encountered '{}'", &gene_id.split("_").nth(0).expect("illegal gene id cannot split"))
                 }
                //ref_lib_ids.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
-                match ref_lib_ids.get_mut(&al_arr[2].to_owned().clone()) {
+                match ref_lib_ids.get_mut(&gene_id.to_owned().clone()) {
                     Some(v) => *v += 1,
-                    None => println!("illegal reference lib id encountered '{}'", &al_arr[2].split("_").nth(0).expect("cannot split ref_lib_ids"))
+                    None => println!("illegal reference lib id encountered '{}'", &gene_id.split("_").nth(0).expect("cannot split ref_lib_ids"))
                 }
             }
         }
