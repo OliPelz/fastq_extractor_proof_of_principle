@@ -72,31 +72,32 @@ fn main() {
     let mut design_out_file =
         BufWriter::new(File::create(format!("{}-designs.txt", out_base_name)).expect("problem opening output file"));
 
-    design_out_file.write_all(b"sgRNA\tCount\n").unwrap();
+    design_out_file.write_all(b"sgRNA\tCount\n").expect("cannot write to design out file");
     
     for (k, v) in &ref_lib_ids {
-        design_out_file.write_all(k.replace("\"", "").as_bytes()).unwrap();
-        design_out_file.write_all(b"\t").unwrap();
-        design_out_file.write_all(v.to_string().as_bytes()).unwrap();
-        design_out_file.write_all(b"\n").unwrap();
+        design_out_file.write_all(k.replace("\"", "").as_bytes()).expect("cannot write to design out file");
+        design_out_file.write_all(b"\t").expect("cannot write to design out file");
+        design_out_file.write_all(v.to_string().as_bytes()).expect("cannot write to design out file");
+        design_out_file.write_all(b"\n").expect("cannot write to design out file");
 
         if *v > 0 {
-            let gid = k.split("_").nth(0).unwrap().to_string();
+            //todo add split magic
+            let gid = k.split("_").nth(0).expect("cannot split gid").to_string();
             *targets_matched.entry(gid).or_insert(0) += 1;
         }
     }
+    println!("#? is much easier to comprehend:n{:#?}", targets_matched);
 
     let mut genes_out_file =
         BufWriter::new(File::create(format!("{}-genes.txt", out_base_name)).expect("problem opening output file"));
-    genes_out_file.write_all(b"Gene\tCount\tdesigns-present\n").unwrap();
+    genes_out_file.write_all(b"Gene\tCount\tdesigns-present\n").expect("cannot write to genes out file");
     for (k, v) in &gene_matches {
         genes_out_file.write_all(k.as_bytes()).unwrap();
         genes_out_file.write_all(b"\t").unwrap();
         genes_out_file.write_all(v.to_string().as_bytes()).unwrap();
         genes_out_file.write_all(b"\t").unwrap();
-        genes_out_file.write_all(targets_matched.get(k).unwrap().to_string().as_bytes()).unwrap();
+        genes_out_file.write_all(targets_matched.get(k).expect(format!("cannot match gene target '{}' ...bailing out", k).as_str()).to_string().as_bytes()).unwrap();
         genes_out_file.write_all(b"\n").unwrap();
-
     }
 
     // write log file
@@ -114,25 +115,25 @@ fn main() {
 fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_lib_ids: &mut BTreeMap<String, u32>) {
 
 
-    let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
+    let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"))
+        .lines();
 
-    for line in fasta_file.lines() {
-        let ln = line.expect("programmer error in reading fasta line by line");
-
-        ref_lib_ids.extend(
-            fasta_re.captures_iter(&ln)
-                // iterate over all Matches, which may have multiple capture groups each
-                .map(|captures: regex::Captures| {
-                    let key = captures.get(1) // of this match, take the first capture group
-                        .expect("fasta regex match should have had first capture group")
-                        .as_str().to_owned(); // make Owned copy of capture-group contents
-                    // add to gene_matches as well
-                    gene_matches.insert(key.split(&geneid_pattern).nth(0).unwrap().to_string(),  0);
-                    (key, 0)
-                }
-                )
-        );
+    // u guess this is faster than regexp parsing and anything else
+    for l in fasta_file {
+        let next_line = l.expect("io-error reading from fasta file");
+        for (end_idx, &item) in next_line.as_bytes().iter().enumerate() {
+            // if not a fasta header line
+            if end_idx == 0 && item != b'>' {
+                break;
+            }
+            else if item == b'_' {//geneid_pattern.as_bytes() {
+                ref_lib_ids.insert(next_line[1..].to_owned(), 0);
+                gene_matches.insert(next_line[1..end_idx].to_owned(), 0);
+            }
+        }
     }
+     //println!("#? is much easier to comprehend:n{:#?}", ref_lib_ids);
+     //println!("#? is much easier to comprehend:n{:#?}", gene_matches);
 }
 
 
@@ -142,8 +143,7 @@ fn process_sam(sam_file: &str,
                gene_matches : &mut BTreeMap<String, u32>,
                ref_lib_ids: &mut BTreeMap<String, u32>)
                -> (u32,u32) {
-
-//-> (HashMap<String, i32>, u32) {
+    //-> (HashMap<String, i32>, u32) {
 
     // our buffer for the sam parser
     let sam_file = BufReader::new(File::open(sam_file).expect("Problem opening fastq file"))
@@ -155,59 +155,74 @@ fn process_sam(sam_file: &str,
     let mapping_match_re =
         Regex::new(mapping_match_pattern).expect("programmer error in mapping match regexp");
 
-    let mut count_total : u32 = 0;
-    let mut count_matched : u32 = 0;
+    let mut count_total: u32 = 0;
+    let mut count_matched: u32 = 0;
+
+    let mut flag_byte = false;
+    let mut parse_line = true;
+    let mut on_tab = false;
+    let mut split_idx = 0;
+    let mut start_idx = 0;
+
+
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
 
         // ----------the basic algorithm starts here ---
-        // now split
+        flag_byte = false;
+        parse_line = true;
+        on_tab = false;
+        split_idx = 0;
+        start_idx = 0;
 
-        let mut flag_byte = false;
-        let mut parse_line = true;
-        let mut split_idx = 0;
-        let mut start_idx = 0;
         let mut gene_id = "";
         let mut cigar_str = "";
         let mut opt_fields = "";
 
-        for (end_idx, &item) in next_line.as_bytes().iter().enumerate() {
-        // fast forward the sam header to the beginning of the
-        // alignment section - skip the header starting with @
-          if end_idx == 0 && item == b'@'{
-             parse_line = false;
-             break;
-          }
-          else if item == b'\t' {
-              split_idx += 1;
 
-              if split_idx == 1 {
-                  flag_byte = true;
-              }
-              else if flag_byte {
-                  if item == b'0' {
+        for (end_idx, &item) in next_line.as_bytes().iter().enumerate() {
+            // fast forward the sam header to the beginning of the
+            // alignment section - skip the header starting with @
+            if end_idx == 0 && item == b'@' {
+                parse_line = false;
+                break;
+            } else if item == b'\t' {
+                split_idx += 1;
+                on_tab = true;
+
+                if split_idx == 1 {
+                    flag_byte = true;
+                }
+            } else if flag_byte {
+                if item == b'0' {
                     parse_line = false;
                     //save some milisecs
                     break;
-                  }
-                  flag_byte = false;
-                  continue;
-              }
-              else if split_idx == 2  {
-                 gene_id = &next_line[start_idx..end_idx];
-              }
-              else if split_idx == 5 {
-                 cigar_str = &next_line[start_idx..end_idx];
-              }
-              else if split_idx == 13 {
-                 opt_fields = &next_line[start_idx..];
-              }
-              start_idx = end_idx;
-           }
+                }
+                flag_byte = false;
+            } else if on_tab && split_idx == 2 {
+                on_tab = false;
+                gene_id = &next_line[start_idx..end_idx];
+                println!("geneid '{}'", gene_id);
+
+            } else if on_tab && split_idx == 5 {
+                on_tab = false;
+                cigar_str = &next_line[start_idx..end_idx];
+                println!("cigar str '{}'", cigar_str);
+
+            } else if on_tab && split_idx == 12 {
+                on_tab = false;
+                opt_fields = &next_line[start_idx..];
+                println!("opt fields '{}'", opt_fields);
+            }
         }
-        if !parse_line {
-           continue;
-        }
+
+    if !parse_line {
+       continue;
+    }
+    println!("'{}'", gene_id);
+    println!("'{}'", cigar_str);
+
 
         count_total += 1;
 
@@ -242,7 +257,6 @@ fn process_sam(sam_file: &str,
             // now introduce mismatches int the string if needed
             if found_mismatch {
                 for pos in mm_positions {
-                    // TODO: next line is not compiling
                     match_string.insert_str(pos, "X");
                 }
             }
@@ -252,6 +266,8 @@ fn process_sam(sam_file: &str,
 
             if mapping_match_re.is_match(&match_string) {
                 count_matched += 1;
+
+                // todo: add split magic on our own!
 
                 match gene_matches.get_mut(gene_id.split("_").nth(0).expect("gene matches not working")) {
                     Some(v) => *v += 1,
