@@ -133,6 +133,22 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, ge
                 )
         );
     }
+
+    /*  zero alloc is slower here :(
+    for l in fasta_file {
+        let next_line = l.expect("io-error reading from fasta file");
+        for (end_idx, &item) in next_line.as_bytes().iter().enumerate() {
+            // if not a fasta header line
+            if end_idx == 0 && item != b'>' {
+                break;
+            }
+            else if item == b'_' {//geneid_pattern.as_bytes() {
+                ref_lib_ids.insert(next_line[1..].to_owned(), 0);
+                gene_matches.insert(next_line[1..end_idx].to_owned(), 0);
+            }
+        }
+}
+    */
 }
 
 
