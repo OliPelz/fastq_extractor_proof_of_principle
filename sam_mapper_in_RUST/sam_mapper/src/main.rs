@@ -159,11 +159,9 @@ fn process_sam(sam_file: &str,
     let mut count_matched : u32 = 0;
     for l in sam_file {
         let next_line = l.expect("io-error reading from samfile");
-
         // ----------the basic algorithm starts here ---
         // now split
 
-        let mut flag_byte = false;
         let mut parse_line = true;
         let mut split_idx = 0;
         let mut start_idx = 0;
@@ -171,7 +169,8 @@ fn process_sam(sam_file: &str,
         let mut cigar_str = "";
         let mut opt_fields = "";
 
-        for (end_idx, &item) in next_line.as_bytes().iter().enumerate() {
+        let next_line_bytes = next_line.as_bytes();
+        for (end_idx, &item) in next_line_bytes.iter().enumerate() {
         // fast forward the sam header to the beginning of the
         // alignment section - skip the header starting with @
           if end_idx == 0 && item == b'@'{
@@ -179,29 +178,26 @@ fn process_sam(sam_file: &str,
              break;
           }
           else if item == b'\t' {
-              split_idx += 1;
-
-              if split_idx == 1 {
-                  flag_byte = true;
-              }
-              else if flag_byte {
-                  if item == b'0' {
+              // flag field 
+              if split_idx == 1  {
+                // FLAG = 0 is the only one which works here
+                 if next_line_bytes[start_idx + 1] != b'0' {
                     parse_line = false;
-                    //save some milisecs
                     break;
-                  }
-                  flag_byte = false;
-                  continue;
+                 }
               }
-              else if split_idx == 2  {
-                 gene_id = &next_line[start_idx..end_idx];
+              // gene id field
+              else if split_idx == 2 {
+                 gene_id = &next_line[start_idx + 1..end_idx];
               }
               else if split_idx == 5 {
-                 cigar_str = &next_line[start_idx..end_idx];
+                 cigar_str = &next_line[start_idx + 1..end_idx];
               }
               else if split_idx == 13 {
-                 opt_fields = &next_line[start_idx..];
+                 opt_fields = &next_line[start_idx + 1..];
               }
+              // this need to be set on every tab found
+              split_idx += 1;
               start_idx = end_idx;
            }
         }
