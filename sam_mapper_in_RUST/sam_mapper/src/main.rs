@@ -50,7 +50,8 @@ fn main() {
 
     // define some default arguments for non-required values
     let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or(r"M{20,21}$");
-    let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").unwrap_or("_").to_owned();
+    let geneid_pattern_string = matches.value_of("GENEIDFSEPERATOR").unwrap_or("_").to_owned();
+    let geneid_pattern : &str = &geneid_pattern_string;
 
     let fasta_re = Regex::new(r"^>(.+)")
             .expect("programmer error in accession regex");
@@ -67,7 +68,7 @@ fn main() {
 
     // now parse the samfile
     let (count_total, count_matched) =
-        process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_lib_ids);
+        process_sam(&sam_file_arg, geneid_pattern, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_lib_ids);
 
     let mut design_out_file =
         BufWriter::new(File::create(format!("{}-designs.txt", out_base_name)).expect("problem opening output file"));
@@ -81,7 +82,7 @@ fn main() {
         design_out_file.write_all(b"\n").unwrap();
 
         if *v > 0 {
-            let gid = k.split("_").nth(0).unwrap().to_string();
+            let gid = k.split(geneid_pattern).nth(0).unwrap().to_string();
             *targets_matched.entry(gid).or_insert(0) += 1;
         }
     }
@@ -100,7 +101,7 @@ fn main() {
     }
 
     // write log file
-    let log_file_str = format!("{}_log.txt", out_base_name);
+    let log_file_str = format!("{}_log.txt", fasta_file_arg);
     let mut log_file =
         BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
     log_file.write_all(b"Total\tMatched\n").unwrap();
@@ -111,7 +112,7 @@ fn main() {
 
 }
 
-fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_lib_ids: &mut BTreeMap<String, u32>) {
+fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : &str, gene_matches : &mut BTreeMap<String, u32>, ref_lib_ids: &mut BTreeMap<String, u32>) {
 
 
     let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
@@ -153,6 +154,7 @@ fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, ge
 
 
 fn process_sam(sam_file: &str,
+               geneid_pattern : &str,
                mismatch_in_pattern: bool,
                mapping_match_pattern: &str,
                gene_matches : &mut BTreeMap<String, u32>,
@@ -264,15 +266,15 @@ fn process_sam(sam_file: &str,
 
             if mapping_match_re.is_match(&match_string) {
                 count_matched += 1;
-
-                match gene_matches.get_mut(gene_id.split("_").nth(0).expect("gene matches not working")) {
+                //println!("{} {}", gene_id, geneid_pattern);
+                match gene_matches.get_mut(gene_id.split(geneid_pattern).nth(0).expect("gene matches not working")) {
                     Some(v) => *v += 1,
-                    None => println!("illegal gene id encountered '{}'", &gene_id.split("_").nth(0).expect("illegal gene id cannot split"))
+                    None => println!("illegal gene id encountered '{}'", &gene_id.split(geneid_pattern).nth(0).expect("illegal gene id cannot split"))
                 }
                //ref_lib_ids.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
                 match ref_lib_ids.get_mut(&gene_id.to_owned().clone()) {
                     Some(v) => *v += 1,
-                    None => println!("illegal reference lib id encountered '{}'", &gene_id.split("_").nth(0).expect("cannot split ref_lib_ids"))
+                    None => println!("illegal reference lib id encountered '{}'", &gene_id.split(geneid_pattern).nth(0).expect("cannot split ref_lib_ids"))
                 }
             }
         }
