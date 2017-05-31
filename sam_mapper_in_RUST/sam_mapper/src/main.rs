@@ -1,5 +1,3 @@
-// #![feature(alloc_system)]
-// extern crate alloc_system;
 extern crate regex;
 extern crate clap;
 
@@ -8,14 +6,6 @@ use std::fs::File;
 use clap::{Arg, App};
 use std::collections::BTreeMap;
 use std::io::{BufReader, BufRead, BufWriter, Write};
-
-
-// print $seqgene "Gene\tCount\tdesigns-present\n";
-// print $seqgene $target."\t".$reads{$target}{"genematch"}."\t".$reads{$target}{"targetmatched"}."\n";
-// open ($stats, ">", $logfile) or die $!; 
-// print $stats "Total\tMatched\n";
-// print $stats $counttotal . "\t" . $countmatched . "\n";
-// close($stats);
 
 
 fn main() {
@@ -28,7 +18,9 @@ fn main() {
             .long("match-pattern")
             .value_name("match_pattern")
             .help("PERL style regexp to match CIGAR strings")
-            .takes_value(true))
+            .takes_value(true)
+            .default_value(r"M{20,21}$")
+        )
         .arg(Arg::with_name("FASTA")
             .help("FASTA input file to process")
             .short("f")
@@ -46,7 +38,9 @@ fn main() {
             .long("geneid-fs-pattern")
             .value_name("geneid_fs_pattern")
             .help("the gene id field seperator pattern, defaults to '_'")
-            .takes_value(true))
+            .takes_value(true)
+            .default_value("_")
+        )
         .arg(Arg::with_name("LOGFILE")
             .short("l")
             .long("log-file")
@@ -60,12 +54,10 @@ fn main() {
     let out_base_name = sam_file_arg.replace(".sam", "");
 
     // define some default arguments for non-required values
-    let mapping_match_pattern = matches.value_of("MATCHPATTERN").unwrap_or(r"M{20,21}$");
-    let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").unwrap_or("_").to_owned();
+    let mapping_match_pattern = matches.value_of("MATCHPATTERN").expect("MATCHPATTERN should have default value");
+    let geneid_pattern = matches.value_of("GENEIDFSEPERATOR").expect("GENEIDFSEPARATOR should have default value").to_owned();
 
 
-
-    //let fasta_re = Regex::new(&format!(r"^>(.+){}", geneid_pattern))
     let fasta_re = Regex::new(r"^>(.+)")
             .expect("programmer error in accession regex");
 
@@ -75,16 +67,13 @@ fn main() {
     let mut gene_matches = BTreeMap::<String, u32>::new();
     let mut ref_lib_ids = BTreeMap::<String, u32>::new();
     let mut targets_matched = BTreeMap::<String, u32>::new();
-    //let mut geneIds = TreeMap::<String, u32>::new();
 
     // first parse the reference genome from the fasta file
     process_fasta(&fasta_file_arg, &fasta_re, geneid_pattern, &mut gene_matches, &mut ref_lib_ids);
 
     // now parse the samfile
-    //let (mapped_geneids, count_total) =
     let (count_total, count_matched) =
         process_sam(&sam_file_arg, mismatch_in_pattern, &mapping_match_pattern, &mut gene_matches, &mut ref_lib_ids);
-
 
 
     let mut design_out_file =
@@ -92,7 +81,6 @@ fn main() {
 
 
     design_out_file.write_all(b"sgRNA\tCount\n").unwrap();
-//    let mut uniqLibIds
     for (k, v) in &ref_lib_ids {
         design_out_file.write_all(k.replace("\"", "").as_bytes()).unwrap();
         design_out_file.write_all(b"\t").unwrap();
@@ -103,7 +91,6 @@ fn main() {
             let gid = k.split("_").nth(0).unwrap().to_string();
             *targets_matched.entry(gid).or_insert(0) += 1;
         }
-        //println!("{}\t{}", k.replace("\"", ""), v);
     }
 
     let mut genes_out_file =
@@ -133,7 +120,6 @@ fn main() {
 
 fn process_fasta(fasta_file: &str, fasta_re: &Regex, geneid_pattern : String, gene_matches : &mut BTreeMap<String, u32>, ref_lib_ids: &mut BTreeMap<String, u32>) {
 
-
     let fasta_file = BufReader::new(File::open(fasta_file).expect("Problem opening fastq file"));
 
     for line in fasta_file.lines() {
@@ -162,8 +148,6 @@ fn process_sam(sam_file: &str,
                gene_matches : &mut BTreeMap<String, u32>,
                ref_lib_ids: &mut BTreeMap<String, u32>)
                -> (u32,u32) {
-
-//-> (HashMap<String, i32>, u32) {
 
     // our buffer for the sam parser
     let sam_file = BufReader::new(File::open(sam_file).expect("Problem opening fastq file"))
@@ -196,8 +180,6 @@ fn process_sam(sam_file: &str,
         }
 
         count_total += 1;
-        //println!("{}", al_arr[2]);
-        //let gene_id = al_arr[2].split("_").nth(0).unwrap();
 
         let mut found_mismatch = false;
         // the sam file format is so BAD that a certain position of any optional field cannot be
@@ -220,7 +202,6 @@ fn process_sam(sam_file: &str,
             // MMMMMMMMMMIDDDDD, 20M1D =
             let mut match_string = String::new();
             for caps in match_string_re.captures_iter(&al_arr[5]) {
-                //println!("{}", &caps[1]);
                 let until_pos: i32 = caps[1].parse().expect("programmer error: cannot convert string to number for iterating");
                 for _ in 0..until_pos {
                     match_string.push_str(&caps[2]);
@@ -245,7 +226,7 @@ fn process_sam(sam_file: &str,
                     Some(v) => *v += 1,
                     None => println!("illegal gene id encountered '{}'", &al_arr[2].split("_").nth(0).expect("illegal gene id cannot split"))
                 }
-               //ref_lib_ids.get(&x).ok_or("illegal gene id encountered").map(|v| v += 1);
+
                 match ref_lib_ids.get_mut(&al_arr[2].to_owned().clone()) {
                     Some(v) => *v += 1,
                     None => println!("illegal reference lib id encountered '{}'", &al_arr[2].split("_").nth(0).expect("cannot split ref_lib_ids"))
@@ -255,7 +236,5 @@ fn process_sam(sam_file: &str,
 
         // --------- end of basic algorithm ---
     }
-
-   // (mapped_geneids, count_total)
     (count_total, count_matched)
 }

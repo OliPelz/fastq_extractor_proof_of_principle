@@ -23,9 +23,11 @@ fn main() {
             .long("pattern")
             .value_name("match_pattern")
             .help("PERL style regexp to extract sub sequences")
-            .takes_value(true))
+            .takes_value(true)
+            .default_value(r"ACC(.{20,21})G")
+        )
         .arg(Arg::with_name("FASTQ")
-            .help("fastq/fastq.gz input file to process")
+            .help("fastq input file to process")
             .short("f")
             .long("fastq-file")
             .value_name("fastq_input_file")
@@ -34,15 +36,17 @@ fn main() {
             .short("c")
             .long("reverse-complement")
             .value_name("reverse_complement")
+            .takes_value(true)
+            .possible_values(&["yes", "no"])
+            .default_value("no")
             .help("set to 'yes' if reverse complement, otherwise (default) set to no")
-            .takes_value(true))
+        )
         .arg(Arg::with_name("LOGFILE")
             .short("l")
             .long("log-file")
             .value_name("log_file")
             .takes_value(true)
             .help("file name of the log file to output"))
-
         .get_matches();
 
     let fastq_file = matches.value_of("FASTQ").expect("cannot get fastq file");
@@ -50,28 +54,26 @@ fn main() {
     let fastq_out_file = format!("{}_extracted.fastq", fastq_base_name);
 
     // define some default arguments for non-required values
-    let patt = matches.value_of("PATTERN").unwrap_or(r"ACC(.{20,21})G");
-    let is_reverse_str = matches.value_of("REVCOMP").unwrap_or("no");
-
+    let patt = matches.value_of("PATTERN").expect("PATTERN should have a default value");
 
     let log_file_str = format!("{}_log.txt", fastq_base_name);
-    let mut log_out_file =
-        BufWriter::new(File::create(matches.value_of("LOGFILE").unwrap_or(&log_file_str)).expect("cannot create out log file"));
 
-    let mut is_reverse = false;
+    let mut log_out_file = BufWriter::new(File::create(
+        matches.value_of("LOGFILE").unwrap_or(&log_file_str)
+    ).expect("cannot create out log file"));
 
-    if is_reverse_str == "yes" {
-        is_reverse = true;
-    }
+    let mut out_file = BufWriter::new(File::create(
+        fastq_out_file
+    ).expect("problem opening output file"));
 
+    let is_reverse: bool = matches.value_of("REVCOMP") == Some("yes");
 
     let re = Regex::new(patt).expect("programmer error in accession regex");
 
     let mut count_total = 0;
     let mut count_extracted = 0;
 
-    let mut out_file =
-        BufWriter::new(File::create(fastq_out_file).expect("problem opening output file"));
+
 
     fastx::fastx_file(&fastq_file[..], |seq| {
         count_total += 1;
