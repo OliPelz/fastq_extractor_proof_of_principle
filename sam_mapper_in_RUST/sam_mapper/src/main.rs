@@ -98,7 +98,12 @@ fn main() {
         genes_out_file.write_all(b"\t").unwrap();
         genes_out_file.write_all(v.to_string().as_bytes()).unwrap();
         genes_out_file.write_all(b"\t").unwrap();
-        genes_out_file.write_all(targets_matched.get(k).unwrap().to_string().as_bytes()).unwrap();
+        if targets_matched.contains_key(k) {
+            genes_out_file.write_all(targets_matched.get(k).unwrap().to_string().as_bytes()).unwrap();
+        }
+        else {
+            genes_out_file.write_all(b"0").unwrap();
+        }
         genes_out_file.write_all(b"\n").unwrap();
 
     }
